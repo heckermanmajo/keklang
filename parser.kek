@@ -1,0 +1,141 @@
+
+type Human
+  name String
+  age String
+  @some_annotation
+  position > Union Car Home Null   # weakfield is not collected
+  # if a field is not weak and it is not atomic, it can not be passed around
+  # without being copied
+
+type Car
+  owner Human
+  age String
+
+type Home
+  owner Human
+
+fn Human::travelHome
+  this Human
+  Null
+  do
+    match > typeof this.position  # typeof # Each value extends kekvalue
+      case Home
+        print "You are already at home"
+      case Car
+        print "You are in your car"
+        set this.position Home
+        print "You are at home"
+      case Null
+        print "You are nowhere"
+        set this.position Home
+        print "You are at home"
+
+var h
+  new Human "John" "30" Null
+
+h.travelHome
+
+!makroCall
+
+comptime
+  var !makrovar "kek"
+
+fn goIntoCar
+  self Human
+  car Car
+  Null
+  do
+    match > typeof human.position
+      case Home
+        print "You are at home"
+        set human.position car
+        print "You are in your car"
+      case Car
+        if
+          is human.position car
+          do
+            print "You are already in your car"
+          else
+            print "You are in another car"
+            set human.position car
+            print "You are in your car"
+      case Null
+        print "You are nowhere"
+        set human.position car
+        print "You are in your car"
+
+
+print "Hello, " name "!"
+
+val h new Human "John"
+
+for > i Int 0 > lt i 10 > ind i
+  print i
+
+var myList > list Int 1 2 3 4 5 6 7 8 9 10
+
+each i Int myList
+  print i
+
+print
+  add 1 2
+#print  add 1 2
+print > add 1 >> add 2 >>> add 3 >>>> add 4 5
+
+var h
+  Human.new
+    name "John"
+    age 20
+
+var mydict
+  dict
+    pair "key1"
+      dict
+        pair "key2"
+          dict
+            pair "key3" > list 1 2 3 4
+    pair "key2"  2
+    pair "key3"  3
+#print "dasgrfeswdrgfhretg "
+ol
+print "Hello," name "!" # SHIT
+
+###
+  Hello my bois
+###
+
+type Position  # hot
+  x Float
+  y Float
+
+type Human
+  _ position Position # use as component
+  name Str
+  age Int
+
+type Worker
+  _* Human  # put by value, not a pointer
+  salary Int
+
+Human.x  # this would be reference to the position
+
+type A
+  a Str
+
+type B
+  _ myA A
+  b String
+
+fn myPrint
+  _ A  #  now this function gets the namespace of A
+  Null
+  do
+    print a
+
+var myGlobal > "kek"
+
+fn useGlobal
+  @use myGlobal ## cannot use global without this annotation
+  Null
+  do
+    print myGlobal
