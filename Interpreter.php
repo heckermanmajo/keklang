@@ -31,18 +31,23 @@ class Instance {
 }
 
 class Interpreter {
-  static array $records = [
-
-  ];
+  static array $records = [];
   static array $globals = [
     "version" => "0.0.1",
   ];
-  static array $functions = [
-
-  ];
+  static array $functions = [];
+  
+  static array $non_comptime_nodes = [];
   
   static array $tlogs = []; // used for testing
   
+  /**
+   * Function used to evaluate script nodes.
+   * @param AstNode $node
+   * @param array|null $env
+   * @return mixed
+   * @throws Exception
+   */
   static function eval(
     AstNode $node,
     array   &$env = null
@@ -110,7 +115,8 @@ class Interpreter {
         $function_args[$name] = $type;
       }
       $function = static function (
-        array $args
+        array $args,
+        array $env
       ) use
       (
         $do_node,
@@ -122,13 +128,17 @@ class Interpreter {
         $i = 0;
         foreach ($function_args as $key => $type_name){
           $given_argument = $args[$i];
-          // todo: do type check here
+          if($type_name != "AstNode"){
+            $given_argument = static::eval($given_argument, $env);
+            // todo: do type check here
+          }
           $local_env[$key] = $given_argument;
           $i++;
         }
         
         $ret = null;
         foreach ($do_node->children as $c) {
+          if($c)
           $ret = static::eval($c, $local_env);
         }
         // todo: check return type here
@@ -211,7 +221,7 @@ class Interpreter {
     }
     
     if ($node->word == "type"){
-      
+      print_r($node);
       $typename = $node->children[0]->word;
       $fields = [];
       // todo: annotations / default values
@@ -332,9 +342,9 @@ class Interpreter {
       $function = static::$functions[$node->word];
       $args = [];
       foreach ($node->children as $c) {
-        $args[] = static::eval($c, $env);
+        $args[] = $c; // the function decides if it evals the given nodes
       }
-      return $function($args);
+      return $function($args, $env);
     }
     
     if (array_key_exists($node->word, $env)) {
@@ -354,33 +364,63 @@ class Interpreter {
     throw new Exception("Unknown node type: {$node->word} " . $node->type);
   }
   
+  /**
+   * @throws Exception
+   */
+  static function parse(AstNode $node): ?AstNode {
+    // parse node
+    if ($node->word == "comptime"){
+      $ret = null;
+      foreach ($node->children as $c)
+        $ret = static::eval($c, static::$globals);
+      if ($ret == null) return null;
+      assert($ret instanceof AstNode);
+      $node = $ret;
+    }
+    if(str_starts_with($node->word, "!") and $node->type == "name"){
+      $node = static::eval($node, static::$globals);
+      if ($node == null) return null;
+    }
+    if($node->indentation == 0){
+      static::$non_comptime_nodes[] = $node;
+      return null;
+    }
+    return $node;
+  }
+  
 }
 
 Interpreter::$functions = [
-  "print" => function (array $args): void {
+  "print" => function (array $args, array $env): void {
+    foreach ($args as $i => $a){$args[$i] = Interpreter::eval($a, $env);};
     assert(is_string($args[0]));
-    assert(count($args) == 1);
+    assert(count($args) == 1, print_r($args, true));
     echo str_replace( ">n", "\n", $args[0]);
   },
-  "itos" => function (array $args): string {
+  "itos" => function (array $args, array $env): string {
+    foreach ($args as $i => $a){$args[$i] = Interpreter::eval($a, $env);};
     assert(count($args) == 1);
     return (string)$args[0];
   },
-  "dumpTypes" => function (array $args): void {
+  "dumpTypes" => function (array $args, array $env): void {
+    foreach ($args as $i => $a){$args[$i] = Interpreter::eval($a, $env);};
     assert(count($args) == 0);
     var_dump(Interpreter::$records);
   },
-  "dump" => function (array $args): void {
+  "dump" => function (array $args, array $env): void {
+    foreach ($args as $i => $a){$args[$i] = Interpreter::eval($a, $env);};
     assert(count($args) == 1);
     var_dump($args[0]);
   },
-  "tlog" => function (array $args): void {
-    assert(is_string($args[0]));
+  "tlog" => function (array $args, array $env): void {
+    foreach ($args as $i => $a){$args[$i] = Interpreter::eval($a, $env);};
+    assert(is_string($args[0]), print_r($args[0], true));
     assert(count($args) == 1);
     Interpreter::$tlogs[] = $args[0];
   },
-  "expect" => function (array $args): void {
+  "expect" => function (array $args, array $env): void {
     // pops the last tlog and compares it to the expected value
+    foreach ($args as $i => $a){$args[$i] = Interpreter::eval($a, $env);};
     assert(is_string($args[0]));
     assert(count($args) == 1);
     $expected = $args[0];
@@ -389,13 +429,55 @@ Interpreter::$functions = [
       throw new Exception("Expected $expected, got $actual");
     }
   },
-  "lt" => function (array $args): bool {
+  "lt" => function (array $args, array $env): bool {
+    foreach ($args as $i => $a){$args[$i] = Interpreter::eval($a, $env);};
     assert(count($args) == 2);
     return $args[0] < $args[1];
   },
-  "add" => function (array $args): int {
+  "add" => function (array $args, array $env): int {
+    foreach ($args as $i => $a){$args[$i] = Interpreter::eval($a, $env);};
     assert(count($args) == 2);
     return $args[0] + $args[1];
+  },
+  "dumpThisNode" => function (array $args, array $env): void {
+    // do not eval the node...
+    assert(count($args) == 1);
+    var_dump($args[0]);
+  },
+  "dumpNode" => function (array $args, array $env): void {
+    $node = Interpreter::eval($args[0], $env);
+    assert(count($args) == 1);
+    assert($node instanceof AstNode);
+    var_dump($node);
+  },
+  "eval_node" => function (array $args, array $env): mixed {
+    $node = Interpreter::eval($args[0], $env);
+    assert(count($args) == 1);
+    assert($node instanceof AstNode);
+    return $node;
+  },
+  "newNode" => function (array $args, array $env): AstNode {
+    $word = Interpreter::eval($args[0], $env);
+    $type = Interpreter::eval($args[1], $env);
+    $line_number = Interpreter::eval($args[2], $env);
+    $indentation = Interpreter::eval($args[3], $env);
+    $children = Interpreter::eval($args[4], $env);
+    $doc_comment = Interpreter::eval($args[5], $env);
+    $node = new AstNode();
+    $node->word = $word;
+    $node->type = $type;
+    $node->line_number = $line_number;
+    $node->indentation = $indentation;
+    $node->children = $children;
+    $node->doc_comment = $doc_comment;
+    return $node;
+  },
+  "array" => function (array $args, array $env): array {
+    $array = [];
+    foreach ( $args as $arg){
+      $array[] = Interpreter::eval($arg, $env);
+    }
+    return $array;
   },
 ];
 
@@ -406,142 +488,179 @@ $code = <<<CODE
 #if false
 #  do > print version
 #  do > print "else block ... >n "
-
-var myvar 10
-
-#print > itos myvar
-
-type Person
-  name Str
-  age Int
+comptime
+  var myvar 10
   
-#dumpTypes
-
-var p
-  new Person
-    name: "John"
-    age: 20
-
-#dump p
-
-tlog p.name
-expect "John"
-tlog > itos p.age
-expect "20"
-
-set p.name "Jane"
-tlog p.name
-expect "Jane"
-
-#dump p
-
-set p 123 # currently no type checks ...
-
-#dump p
-
-fn foo > a Str > b Str > Null
-  do
-    tlog a
-    tlog b
-
-foo "kek" "lol"
-expect "lol"
-expect "kek"
-
-tlog "hello"
-expect "hello"
-
-if 12
-  case 33 > do >> tlog "33"
-  case 12 > do >> tlog "12"
-  else > do >> tlog "else"
-expect "12"
-var lol 12
-if lol
-  case 33 > do >> tlog "33"
-  case 12 > do >> tlog "12"
-  else > do >> tlog "else"
-expect "12"
-
-if 0
-  case 33 > do >> tlog "33"
-  case 2212 > do >> tlog "12"
-  else > do >> tlog "else"
-expect "else"
-
-for i 0 5 1
-  do
-    #print > itos i
-    tlog > itos i
+  #print > itos myvar
+  
+  type Person
+    name Str
+    age Int
     
-expect "4"
-expect "3"
-expect "2"
-expect "1"
-expect "0"
-
-var i 0
-while > lt i 5
-  do
-    tlog "while"
-    set i > add i 1
-    
-expect "while"
-expect "while"
-expect "while"
-expect "while"
-expect "while"
-
-type Car
-  name Str
-  owner Person
-
-fn bar > age Int > name Str > Person
-  do
+  #dumpTypes
+  
+  var p
     new Person
-      name: name
-      age: age
+      name: "John"
+      age: 20
+  
+  #dump p
+  
+  tlog p.name
+  expect "John"
+  tlog > itos p.age
+  expect "20"
+  
+  set p.name "Jane"
+  tlog p.name
+  expect "Jane"
+  
+  #dump p
+  
+  set p 123 # currently no type checks ...
+  
+  #dump p
+  
+  fn foo > a Str > b Str > Null
+    do
+      tlog a
+      tlog b
+  
+  foo "kek" "lol"
+  expect "lol"
+  expect "kek"
+  
+  tlog "hello"
+  expect "hello"
+  
+  if 12
+    case 33 > do >> tlog "33"
+    case 12 > do >> tlog "12"
+    else > do >> tlog "else"
+  expect "12"
+  var lol 12
+  if lol
+    case 33 > do >> tlog "33"
+    case 12 > do >> tlog "12"
+    else > do >> tlog "else"
+  expect "12"
+  
+  if 0
+    case 33 > do >> tlog "33"
+    case 2212 > do >> tlog "12"
+    else > do >> tlog "else"
+  expect "else"
+  
+  for i 0 5 1
+    do
+      #print > itos i
+      tlog > itos i
+      
+  expect "4"
+  expect "3"
+  expect "2"
+  expect "1"
+  expect "0"
+  
+  var i 0
+  while > lt i 5
+    do
+      tlog "while"
+      set i > add i 1
+      
+  expect "while"
+  expect "while"
+  expect "while"
+  expect "while"
+  expect "while"
+  
+  type Car
+    name Str
+    owner Person
+  
+  fn bar > age Int > name Str > Person
+    do
+      new Person
+        name: name
+        age: age
+  
+  var p2 > bar 20 "Lol"
+  #dump p2
+  
+  tlog p2.name
+  expect "Lol"
+  tlog > itos p2.age
+  expect "20"
+  
+  var c
+    new Car
+      name: "BMW"
+      owner: p2
+      
+  tlog c.name
+  expect "BMW"
+  tlog c.owner.name
+  expect "Lol"
+  
+  fn baz > a Int > b Int > Int
+    do
+      add a b
+      
+  tlog > itos >> baz 1 2
+  expect "3"
+  
+  fn wow > a Int > b Int > Int
+    do
+      var asd > add a b
+      var xxx > add a b
+      add asd xxx
+  
+  tlog > itos >> wow 1 2
+  expect "6"
+  
+  print "All tests passed"
+  
+  fn !macro > a AstNode > AstNode
+    do
+      dumpNode a
+      a
 
-var p2 > bar 20 "Lol"
-#dump p2
+!macro > print >> itos 1 >> itos 2
 
-tlog p2.name
-expect "Lol"
-tlog > itos p2.age
-expect "20"
+comptime
+  var word > "1"
+  var nodeType > "Int"
+  var line_number > 0
+  var indentation > 0
+  var children > array
+  var doc_comment > ""
+  var node > newNode word nodeType line_number indentation children doc_comment
+  dumpNode node
 
-var c
-  new Car
-    name: "BMW"
-    owner: p2
-    
-tlog c.name
-expect "BMW"
-tlog c.owner.name
-expect "Lol"
+comptime
+  fn intNode value Int > AstNode
+    do
+      var word > "1"
+      var nodeType > "Int"
+      var line_number > 0
+      var indentation > 0
+      var children > array
+      var doc_comment > ""
+      var node > newNode word nodeType line_number indentation children doc_comment
+      node
+      
+  fn !intNode value Int > AstNode > do >> intNode value
+  
+print > itos >> !intNode 1
 
-fn baz > a Int > b Int > Int
-  do
-    add a b
-    
-tlog > itos >> baz 1 2
-expect "3"
-
-fn wow > a Int > b Int > Int
-  do
-    var asd > add a b
-    var xxx > add a b
-    add asd xxx
-
-tlog > itos >> wow 1 2
-expect "6"
-
-print "All tests passed"
+comptime
+  print "hello world >n "
+  dumpNode > !intNode 1
 
 CODE;
 assert(isset($KEYWORDS));
 $pplines = preProcessLines($code);
 $nodes = makeAstNodes($pplines, $KEYWORDS);
 foreach($nodes as $node) {
-  Interpreter::eval($node, Interpreter::$globals);
+  Interpreter::parse($node);
 }

@@ -63,7 +63,7 @@ function makeAstNodes(
     }
     
     if (is_numeric($raw_string)) {
-      if(str_contains($raw_string, ".")) {
+      if (str_contains($raw_string, ".")) {
         $node = $na("float", $raw_string, $line_number, $indentation);
       } else {
         $node = $na("int", $raw_string, $line_number, $indentation);
@@ -95,8 +95,8 @@ function makeAstNodes(
     $indent = str_repeat(" ", $node->indentation);
     $node->doc_comment = $doc_comment_the_line_before;
     $node->doc_comment = str_replace("###", "", $node->doc_comment);
-    $node->doc_comment = str_replace("#", "\n".$indent, $node->doc_comment);
-    if(strlen($node->doc_comment) > 0)$node->doc_comment .= "\n";
+    $node->doc_comment = str_replace("#", "\n" . $indent, $node->doc_comment);
+    if (strlen($node->doc_comment) > 0) $node->doc_comment .= "\n";
     $doc_comment_the_line_before = '';
     
     # check if i am on a higher indentation level than the last node
@@ -115,7 +115,9 @@ function makeAstNodes(
   }
   
   // array filter to only get the top level nodes
-  $nodes = array_filter($nodes, fn($node) => $node->indentation == 0);
+  $nodes = array_filter($nodes, fn(
+    $node
+  ) => $node->indentation == 0);
   
   
   return $nodes;
@@ -123,9 +125,9 @@ function makeAstNodes(
 }
 
 #$ppl = preProcessLines(file_get_contents("parser.kek"));
-
-$ppl = preProcessLines(
-  "
+if (!debug_backtrace()):
+  $ppl = preProcessLines(
+    "
 ###
   This is a beautiful print
   KEKEKEKEKEKEKE
@@ -147,16 +149,17 @@ type A
   
 print \"lol\"
 "
-);
+  );
+  
+  $astNodes = makeAstNodes(
+    $ppl,
+    $KEYWORDS
+  );
+  
+  
+  foreach ($astNodes as $item) {
+    echo $item . "\n";
+  }
+  #print_r($astNodes);
 
-$astNodes = makeAstNodes(
-  $ppl,
-  $KEYWORDS
-);
-
-
-
-foreach ($astNodes as $item) {
-  echo $item . "\n";
-}
-#print_r($astNodes);
+endif;
