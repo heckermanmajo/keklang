@@ -3,7 +3,7 @@ type Human
   name String
   age String
   @some_annotation
-  position > Union Car Home Null   # weakfield is not collected
+  position > Union Car Home Null   # weak field is not collected
   # if a field is not weak and it is not atomic, it can not be passed around
   # without being copied
 

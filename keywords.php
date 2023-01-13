@@ -8,8 +8,9 @@ $KEYWORDS =[
   "do",
   "case",
   "if",
+  "set",
   # todo: change to use or unpack
-  "_",  # "unpacks" a struct-declaration into another struct
+  #"_",  # "unpacks" a struct-declaration into another struct
   "while",
   "for",
   "each",

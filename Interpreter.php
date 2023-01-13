@@ -41,6 +41,8 @@ class Interpreter {
 
   ];
   
+  static array $tlogs = []; // used for testing
+  
   static function eval(
     AstNode $node,
     array   &$env = null
@@ -66,13 +68,13 @@ class Interpreter {
     if($node->word == "new"){
       $typename = $node->children[0]->word;
       $fields = [];
-      foreach ($node->children as $key => $value){
+      foreach ($node->children as $key => $name_arg){
         if ($key == 0) {
           continue;
         }
-        assert($value->type == "named_param", $value);
-        $value = static::eval($value->children[0]);
-        $name = str_replace(":", "", $value);
+        assert($name_arg->type == "named_param", $name_arg);
+        $value = static::eval($name_arg->children[0], $env);
+        $name = str_replace(":", "", $name_arg->word);
         $fields[$name] = $value;
       }
       $instance = new Instance();
@@ -163,10 +165,12 @@ class Interpreter {
           return null;
         }
       } elseif ($node->children[1]->word == "case") {
-        $value = static::eval($node->children[1]);
+        $value = static::eval($node->children[0], $env);
         $cases = [];
         $else = null;
-        foreach ($node->children as $c) {
+        # remove the first child -> it is the value
+        $_cases = array_slice($node->children, 1);
+        foreach ($_cases as $c) {
           if ($c->word == "case") {
             $cases[] = $c;
           }else if ($c->word == "else") {
@@ -178,20 +182,15 @@ class Interpreter {
         if($else == null) {
           throw new Exception("no else in if case");
         }
-        $found = false;
         foreach ($cases as $c){
           $cond = static::eval($c->children[0], $env);
           if($cond == $value){
-            $found = true;
             //todo: this expects a do block, but we could remove the do block
-            static::eval($c->children[1], $env);
-            break;
+            return static::eval($c->children[1], $env);
           }
         }
-        if (!$found){
-          static::eval($else, $env);
-        }
-        return null;
+        // do th do block after else, no condition
+        return static::eval($else->children[0], $env);
         
       } else {
         throw new Exception("if or case expected: line " . $node->line_number);
@@ -242,12 +241,33 @@ class Interpreter {
       assert(is_int($step));
       $do = $node->children[4];
       // add name to env
-      $env[$name] = $start_value;
+      #$env[$name] = $start_value;
       for($i = $start_value; $i < $end_value; $i += $step) {
-        static ::eval($do, $env);
+        $env[$name] = $i;
+        static::eval($do, $env);
       }
       // remove name from env
       unset($env[$name]);
+      return null;
+    }
+    
+    if ($node->word == "set"){
+      $name = $node->children[0]->word;
+      if (str_contains($name, ".")) {
+        $parts = explode(".", $name);
+        $obj = $env[$parts[0]];
+        $last_part = $parts[count($parts) - 1];
+        $other_parts = array_slice($parts, 1, count($parts) - 2);
+        foreach ($other_parts as $key => $value) {
+          if ($key == 0) continue;
+          $obj = $obj->fields[$value];
+        }
+        $instance = $obj;
+        $instance->fields[$last_part] = static::eval($node->children[1], $env);
+      }else{
+        // this measn we are not allowed to change globals, except if the global s a instance
+        $env[$name] = static::eval ($node->children[1], $env);
+      }
       return null;
     }
     
@@ -326,7 +346,7 @@ class Interpreter {
       $obj = $env[$parts[0]];
       foreach ($parts as $key => $value) {
         if ($key == 0) continue;
-        $obj = $obj->$value;
+        $obj = $obj->fields[$value];
       }
       return $obj;
     }
@@ -350,36 +370,173 @@ Interpreter::$functions = [
     assert(count($args) == 0);
     var_dump(Interpreter::$records);
   },
+  "dump" => function (array $args): void {
+    assert(count($args) == 1);
+    var_dump($args[0]);
+  },
+  "tlog" => function (array $args): void {
+    assert(is_string($args[0]));
+    assert(count($args) == 1);
+    Interpreter::$tlogs[] = $args[0];
+  },
+  "expect" => function (array $args): void {
+    // pops the last tlog and compares it to the expected value
+    assert(is_string($args[0]));
+    assert(count($args) == 1);
+    $expected = $args[0];
+    $actual = array_pop(Interpreter::$tlogs);
+    if ($expected != $actual) {
+      throw new Exception("Expected $expected, got $actual");
+    }
+  },
+  "lt" => function (array $args): bool {
+    assert(count($args) == 2);
+    return $args[0] < $args[1];
+  },
+  "add" => function (array $args): int {
+    assert(count($args) == 2);
+    return $args[0] + $args[1];
+  },
 ];
 
+/** @language=*.kek*/
 $code = <<<CODE
 
-print "hello world >n "
-if false
-  do > print version
-  do > print "else block ... >n "
+#print "hello world >n "
+#if false
+#  do > print version
+#  do > print "else block ... >n "
 
 var myvar 10
 
-print > itos myvar
+#print > itos myvar
 
 type Person
   name Str
   age Int
   
-dumpTypes
+#dumpTypes
 
 var p
   new Person
     name: "John"
     age: 20
 
+#dump p
+
+tlog p.name
+expect "John"
+tlog > itos p.age
+expect "20"
+
+set p.name "Jane"
+tlog p.name
+expect "Jane"
+
+#dump p
+
+set p 123 # currently no type checks ...
+
+#dump p
+
 fn foo > a Str > b Str > Null
   do
-    print a
-    print b
+    tlog a
+    tlog b
 
 foo "kek" "lol"
+expect "lol"
+expect "kek"
+
+tlog "hello"
+expect "hello"
+
+if 12
+  case 33 > do >> tlog "33"
+  case 12 > do >> tlog "12"
+  else > do >> tlog "else"
+expect "12"
+var lol 12
+if lol
+  case 33 > do >> tlog "33"
+  case 12 > do >> tlog "12"
+  else > do >> tlog "else"
+expect "12"
+
+if 0
+  case 33 > do >> tlog "33"
+  case 2212 > do >> tlog "12"
+  else > do >> tlog "else"
+expect "else"
+
+for i 0 5 1
+  do
+    #print > itos i
+    tlog > itos i
+    
+expect "4"
+expect "3"
+expect "2"
+expect "1"
+expect "0"
+
+var i 0
+while > lt i 5
+  do
+    tlog "while"
+    set i > add i 1
+    
+expect "while"
+expect "while"
+expect "while"
+expect "while"
+expect "while"
+
+type Car
+  name Str
+  owner Person
+
+fn bar > age Int > name Str > Person
+  do
+    new Person
+      name: name
+      age: age
+
+var p2 > bar 20 "Lol"
+#dump p2
+
+tlog p2.name
+expect "Lol"
+tlog > itos p2.age
+expect "20"
+
+var c
+  new Car
+    name: "BMW"
+    owner: p2
+    
+tlog c.name
+expect "BMW"
+tlog c.owner.name
+expect "Lol"
+
+fn baz > a Int > b Int > Int
+  do
+    add a b
+    
+tlog > itos >> baz 1 2
+expect "3"
+
+fn wow > a Int > b Int > Int
+  do
+    var asd > add a b
+    var xxx > add a b
+    add asd xxx
+
+tlog > itos >> wow 1 2
+expect "6"
+
+print "All tests passed"
 
 CODE;
 assert(isset($KEYWORDS));
