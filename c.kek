@@ -1,4 +1,15 @@
 ###
+{
+  "json_info_for_the_ide": {
+    "line_comments": {
+      ""
+    }
+  }
+}
+###
+
+
+###
   Just some brainstorming if we compile
   c to kek, we need some runtime infos.
 ###

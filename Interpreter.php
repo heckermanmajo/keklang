@@ -1,5 +1,10 @@
 <?php
 
+// display errors
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
 # todo: finish the interpreter
 # todo: create benchmarks -> jit
 
@@ -699,7 +704,19 @@ class Interpreter {
       "getTypeInfo" => function (
         array $args,
         array $env
-      ){}
+      ){},
+
+      "concat" => function (
+        array $args,
+        array $env
+      ): string {
+        assert(count($args) == 2);
+        $one = Interpreter::eval($args[0], $env);
+        $two = Interpreter::eval($args[1], $env);
+        assert(is_string($one));
+        assert(is_string($two));
+        return $one . $two;
+      }
       
       # todo: create generic type -> own generics type for
       # gtype function, where firts eklemnt is list of placeholders
@@ -873,7 +890,7 @@ comptime
   
   fn !macro > a AstNode > AstNode
     do
-      dumpNode a
+      #dumpNode a
       a
 
 !macro > print >> itos 1 >> itos 2
@@ -886,7 +903,7 @@ comptime
   var children > array
   var doc_comment > ""
   var node > newNode word nodeType line_number indentation children doc_comment
-  dumpNode node
+  #dumpNode node
 
 comptime
   fn intNode value Int > AstNode
@@ -927,7 +944,7 @@ print > itos >> !intNode 1
 
 comptime
   print "hello world >n "
-  dumpNode > !intNode 1
+  #dumpNode > !intNode 1
 
 comptime
   ppAllCollectedNodes
@@ -937,13 +954,35 @@ comptime
   each key _node _allNodes
     do
       print "node: >n "
-      dumpNode _node
+      #dumpNode _node
 
 CODE;
-Interpreter::init();
-assert(isset($KEYWORDS));
-$pplines = preProcessLines($code);
-$nodes = makeAstNodes($pplines, $KEYWORDS);
-foreach ($nodes as $node) {
-  Interpreter::parse($node);
+
+if(debug_backtrace() == 0) {
+  Interpreter::init();
+  assert(isset($KEYWORDS));
+  $pplines = preProcessLines($code);
+  $nodes = makeAstNodes($pplines, $KEYWORDS);
+  foreach ($nodes as $node) {
+    Interpreter::parse($node);
+  }
+}
+
+if(isset($_POST["code"])) {
+  Interpreter::init();
+  $code = $_POST["code"];
+  $pplines = preProcessLines($code);
+  $nodes = makeAstNodes($pplines, $KEYWORDS);
+  ob_start();
+  foreach ($nodes as $node) {
+    Interpreter::parse($node);
+  }
+  $result = ob_get_clean();
+  
+  echo json_encode(array(
+    "result" => $result,
+    "non_comptime_nodes" => Interpreter::$non_comptime_nodes,
+    "records" => Interpreter::$records,
+    "functions" => Interpreter::$functions,
+  ));
 }
