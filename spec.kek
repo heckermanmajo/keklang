@@ -1,0 +1,265 @@
+
+###
+  Builtin types:
+
+
+
+###
+
+
+comptime
+  ###
+    Only code in this block will be executed at compile time.
+    Or the function name starts with '!'
+  ###
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+type Human
+  name !readonly Str  # manipulate the type instance of this field
+  age Str
+  position > !Union Car Home Null   # weak field is not collected
+  # if a field is not weak and it is not atomic, it can not be passed around
+  # without being copied
+
+type Car
+  owner Human
+  age String
+
+type Home
+  owner Human
+
+fn Human::travelHome
+  this Human
+  Null
+  do
+    match > typeof this.position  # typeof # Each value extends kekvalue
+      case Home
+        print "You are already at home"
+      case Car
+        print "You are in your car"
+        set this.position Home
+        print "You are at home"
+      case Null
+        print "You are nowhere"
+        set this.position Home
+        print "You are at home"
+
+var h
+  new Human "John" "30" Null
+
+h.travelHome
+
+!makroCall
+
+comptime
+  var !makrovar "kek"
+
+fn goIntoCar
+  self Human
+  car Car
+  Null
+  do
+    match > typeof human.position
+      case Home
+        print "You are at home"
+        set human.position car
+        print "You are in your car"
+      case Car
+        if
+          is human.position car
+          do
+            print "You are already in your car"
+          else
+            print "You are in another car"
+            set human.position car
+            print "You are in your car"
+      case Null
+        print "You are nowhere"
+        set human.position car
+        print "You are in your car"
+
+
+print "Hello, " name "!"
+
+var h new Human "John"
+
+for > i Int 0 > lt i 10 > ind i
+  print i
+
+var myList > list Int 1 2 3 4 5 6 7 8 9 10
+
+each i Int myList
+  print i
+
+print
+  add 1 2
+#print  add 1 2
+print > add 1 >> add 2 >>> add 3 >>>> add 4 5
+
+var h
+  Human.new
+    name "John"
+    age 20
+
+var mydict
+  dict
+    pair "key1"
+      dict
+        pair "key2"
+          dict
+            pair "key3" > list 1 2 3 4
+    pair "key2"  2
+    pair "key3"  3
+#print "dasgrfeswdrgfhretg "
+ol
+print "Hello," name "!" # SHIT
+
+###
+  Hello my bois
+###
+
+type Position  # hot
+  x Float
+  y Float
+
+type Human
+  _ position Position # use as component
+  name Str
+  age Int
+
+type Worker
+  salary Int
+
+Human.x  # this would be reference to the position
+
+type A
+  a Str
+
+type B
+  b String
+
+fn myPrint
+  Null
+  do
+    print a
+
+var myGlobal > "kek"
+
+fn useGlobal
+  Null
+  do
+    !allowGlobal myGlobal
+    print myGlobal
+
+comptime
+  ###
+  If cou want to create a container type
+  You would do it like so:
+
+  This function would only work within the comptime environment
+  ###
+  fn MyContainerType
+    T1 Type
+    T2 Type
+    Type
+    do
+      if
+        not
+          typeExists
+            concat "MyContainerType<" > typetos T1 > "," > typetos T2 > ">"
+
+        do
+          type
+            concat "MyContainerType<" > typetos T1 > "," > typetos T2 > ">"
+              a T1
+              b T2
+
+      "MyContainerType<" > typetos T1 > "," > typetos T2 > ">"
+
+# for the code that then is transpiled to some other language
+# we would implement a replacement function
+
+comptime
+  fn !2generic
+    placeholders > Array Str
+    typeNode AstNode
+    Callable > list >> T1 AstNode >> T2 AstNode > TypeNode  # return type
+    do
+      fn > concat "!" >> get >>> get typeNode.children 0 >> word
+        T1 AstNode
+        TypeNode
+        do
+          # todo: only create a compilation Type if it does not exist
+          typeNode
+            replaceAllWords
+              dict
+                get placeholders 1 > T2
+                get placeholders 2 > T1
+
+  fn !2generic
+    dict
+      placeholders > Array Str
+      typeNode > AstNode
+    Function
+      dict
+        T1 > AstNode
+        T2 > AstNode
+      TypeNode  # return type
+    do
+      fn
+        concat
+          "!"
+          get > get typeNode.children 0 > word
+        dict > T1 >> AstNode
+        TypeNode
+        do
+          # todo: only create a compilation Type if it does not exist
+          typeNode
+            replaceAllWords
+              dict
+                pair > get placeholders 1 > T2
+                pair > get placeholders 2 > T1
+
+
+# This would only define the function !MyContainerType
+!2generic
+  list "T1" "T2"
+  type MyContainerType
+    a T1
+    b T2
+
+!1generic
+  list "T1"
+  type Point
+    a T1
+    b T1
+
+fn foo > lol MyContainerType Int Str
+  Null
+  do
+    print > itos lol.a
+    print lol.b
+
+
+comptime
+  fn foo
+    a Name # name means string or name
+
+# variadic functions:
+# vardict, varlist
+fn myVar
+  args Vardict
+
+# allow functions as variables

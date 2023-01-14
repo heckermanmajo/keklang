@@ -1,0 +1,4 @@
+
+
+-> Better error messages
+-> Code the whole transpilation process in kek itself.

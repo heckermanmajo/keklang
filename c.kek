@@ -1,0 +1,31 @@
+###
+  Just some brainstorming if we compile
+  c to kek, we need some runtime infos.
+###
+
+
+comptime
+
+  type KekCType
+    pointer Bool
+    typeName Str
+    readonly Bool
+    managed Bool
+
+  type KekCFunctionArgument
+    name Str
+    argumentType KekCType
+
+  type KekCFunction
+    name Str
+    returnType KekCType
+    arguments > List KekCFunctionArgument
+
+  type KekCStruct
+    name Str
+    fields > List KekCType
+
+  var md
+    dict
+      Str > List KekCType
+      pair "lol" > list Type Str Int Bool

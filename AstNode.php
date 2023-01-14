@@ -11,6 +11,7 @@ class AstNode {
   public array $children = array();
   public string $doc_comment = '';
   public string $type = '';
+  public string $creator = '';
   
   public function __construct() { }
   

@@ -156,7 +156,6 @@ print \"lol\"
     $KEYWORDS
   );
   
-  
   foreach ($astNodes as $item) {
     echo $item . "\n";
   }
