@@ -1,0 +1,16 @@
+
+# open a file is built in, so we can write a import in kek itself.
+# the basic import should be only allows to read secure packages
+#comptime
+  #var std.open > import "std/open"
+  #var open > import "std/openFile"
+  # import from secure https package
+  # the package needs to be checked
+  # You have the guarantee that a secure package only contains secure packages
+  #var open > import "https://..." # the url is expected to have a kek file at the end
+  # load a random insecure package
+  #var someRandomPackage > unsafeImport "https://..."
+  # you can disallow any execution, except for definitions
+  #var someOtherRandomPackage > unsafeImport "https://..." "noexec"
+  # and afterwards check the code, etc, but this needs to be done
+  # by user code

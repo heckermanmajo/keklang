@@ -1,0 +1,18 @@
+
+# work in progress
+# todo: how to doi the mapping?
+#       We need a c-kek lang core
+# The goal is to start with a 1:1 mapping and
+# then improve this mapping in syntax
+struct MyStruct
+  a int
+
+var myVal
+  MemAddr MyStruct
+  CastTo
+    MemAddr MyStruct
+    MemAddr > malloc >> sizeof MyStruct
+
+myVal.a = 1234
+
+stdlib.printf "myStruct: %d \n" myVal.a

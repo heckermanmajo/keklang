@@ -7,8 +7,7 @@ include_once "preProcessLines.php";
  * @return array<AstNode>
  */
 function makeAstNodes(
-  array $preProcessedLines,
-  array $keywords
+  array $preProcessedLines
 ): array {
   $nodes = array();
   
@@ -73,11 +72,6 @@ function makeAstNodes(
     
     if ($raw_string == "true" or $raw_string == "false") {
       $node = $na("boolean", $raw_string, $line_number, $indentation);
-      goto collect_children;
-    }
-    
-    if (in_array($raw_string, $keywords)) {
-      $node = $na("keyword", $raw_string, $line_number, $indentation);
       goto collect_children;
     }
     

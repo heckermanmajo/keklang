@@ -1,0 +1,18 @@
+
+
+comptime
+
+  # If we want a protocol like toString
+
+  type MyType
+    a Int
+
+  fn MyType::toString
+    this MyType
+    Str
+    do
+      format "MyType %s" this.a
+
+  print > MyType 1 #  then uses the toString method
+
+  # the suer can use this also on his own

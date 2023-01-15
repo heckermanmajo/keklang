@@ -61,18 +61,72 @@ class Record {
   public string $name;
   /** @var array<string, string> */
   public array $fields;
+  
+  public function __construct(
+    string $name = "",
+    array $fields = []
+  ) {
+    $this->name = $name;
+    $this->fields = $fields;
+  }
+
 }
 
 class Instance {
   public Record $type;
   public array $fields;
+  public function __construct(
+    Record $type,
+    array $fields
+  ) {
+    $this->type = $type;
+    $this->fields = $fields;
+  }
+}
+
+class KekError extends Exception {
+  public int $codeLine = 0;
+  public string $codeString = "";
+  public function __construct(
+    string $message = "",
+    int $codeLine = 0,
+    string $codeString = ""
+  ) {
+    parent::__construct($message, 0, null);
+    $this->codeLine = $codeLine;
+    $this->codeString = $codeLine;
+  }
+  
+  public function getRecordInstance(): Instance {
+    return new Instance(
+      Interpreter::$records["KekError"],
+      [
+        "message" => $this->message,
+        "codeLine" => $this->codeLine,
+        "code" => $this->code
+      ]
+    );
+  }
 }
 
 # todo: make functions just variables and wrap then into a value type
 #       that can also have a doc comment and annotations
 #       So we can call/analyze even the script code and do stuff like this
-#       var a > fn Void do >> print "hello"
-# todo: make functions wok like this
+#       var a > fn _ Void do >> print "hello"
+# todo: make functions work like this
+
+# todo: make all "names" also accept normal string values so we can do
+#       var > concat "a_" >> itos 123 > "some value"
+#       # like var a_123 "some value"
+
+# todo: allow varargs -> via dict and list VarList, VarDict "Type"
+
+# todo: Create builtins for file io, so i can create a import function in kek itself,
+#       The more functions i can implement in kek itself, the better
+
+# todo: make the keywords functions
+
+# todo: replace assert with KekError -> can be catched and handled by kek itself
 
 class Interpreter {
   static array $records = [];
@@ -92,7 +146,7 @@ class Interpreter {
     AstNode $node,
     array   &$env = null
   ): mixed {
-    global $KEYWORDS;
+    
     // eval one node
     if ($node->type == "string") {
       return $node->word;
@@ -109,290 +163,6 @@ class Interpreter {
       } else {
         return true;
       }
-    }
-    
-    if ($node->word == "new") {
-      $typename = $node->children[0]->word;
-      $fields = [];
-      foreach ($node->children as $key => $name_arg) {
-        if ($key == 0) {
-          continue;
-        }
-        assert($name_arg->type == "named_param", $name_arg);
-        $value = static::eval($name_arg->children[0], $env);
-        $name = str_replace(":", "", $name_arg->word);
-        $fields[$name] = $value;
-      }
-      $instance = new Instance();
-      $instance->type = static::$records[$typename];
-      $instance->fields = $fields;
-      return $instance;
-    }
-    
-    if ($node->word == "fn") {
-      // todo: arguments
-      // todo: check return type -> at first at runtime
-      // todo: use annotations
-      $function_name = $node->children[0]->word;
-      // assert that the function name is not already used
-      assert(!array_key_exists($function_name, static::$functions), $function_name);
-      // assert that the function name is not a keyword
-      assert(!in_array($function_name, $KEYWORDS, $function_name));
-      // assert that the function name is lowercase or, if it starts with uppercase that it is also a type
-      assert(
-        $function_name[0] == strtolower($function_name[0]) || array_key_exists($function_name, static::$records),
-        $function_name . " is not a valid function name"
-      );
-      $function_args = []; // args to check against
-      $do_node = null;
-      $return_type = null;
-      foreach ($node->children as $key => $c) {
-        if ($key == 0) {
-          continue; // ignore function name
-        }
-        if (count($c->children) == 0) {
-          // todo: assert that this is a type
-          $return_type = $c;
-          continue;
-        }
-        if ($c->word == "do") {
-          $do_node = $c;
-          assert($key == count($node->children) - 1);
-          break;
-        }
-        $name = $c->word;
-        $type = $c->children[0]->word;
-        $function_args[$name] = $type;
-      }
-      $function = static function (
-        array $args,
-        array $env
-      ) use
-      (
-        $do_node,
-        $function_args,
-        $return_type
-      ) {
-        $local_env = array();
-        
-        $i = 0;
-        foreach ($function_args as $key => $type_name) {
-          $given_argument = $args[$i];
-          if ($type_name != "AstNode") {
-            $given_argument = static::eval($given_argument, $env);
-            // todo: do type check here
-          }
-          $local_env[$key] = $given_argument;
-          $i++;
-        }
-        
-        $ret = null;
-        foreach ($do_node->children as $c) {
-          if ($c)
-            $ret = static::eval($c, $local_env);
-        }
-        // todo: check return type here
-        return $ret;
-      };
-      // if the name is "_", this is an anonymous function
-      // just return it
-      if ($function_name == "_") {
-        return $function;
-      }
-      static::$functions[$function_name] = $function;
-      return null;
-    }
-    
-    if ($node->word == "var") {
-      $var_name = $node->children[0]->word;
-      $value = $node->children[1];
-      $env[$var_name] = static::eval($value, $env);
-      return null;
-    }
-    
-    if ($node->word == "if") {
-      // first get a condition
-      // then cases or do blocks  -> case or do
-      $condition = $node->children[0];
-      $eval_cond = static::eval($condition, $env);
-      if ($node->children[1]->word == "do") {
-        // it is a if
-        $then = $node->children[1];
-        $else = $node->children[2] ?? null;
-        #assert($eval_cond == true);
-        assert($else->word == "do" or $else == null);
-        if ($eval_cond) {
-          return static::eval($then, $env);
-        } else {
-          if ($else != null) {
-            return static::eval($else, $env);
-          }
-          return null;
-        }
-      } elseif ($node->children[1]->word == "case") {
-        $value = static::eval($node->children[0], $env);
-        $cases = [];
-        $else = null;
-        # remove the first child -> it is the value
-        $_cases = array_slice($node->children, 1);
-        foreach ($_cases as $c) {
-          if ($c->word == "case") {
-            $cases[] = $c;
-          } else if ($c->word == "else") {
-            $else = $c;
-          } else {
-            throw new Exception("invalid if case: " . $c->word);
-          }
-        }
-        if ($else == null) {
-          throw new Exception("no else in if case");
-        }
-        foreach ($cases as $c) {
-          $cond = static::eval($c->children[0], $env);
-          if ($cond == $value) {
-            //todo: this expects a do block, but we could remove the do block
-            return static::eval($c->children[1], $env);
-          }
-        }
-        // do th do block after else, no condition
-        return static::eval($else->children[0], $env);
-        
-      } else {
-        throw new Exception("if or case expected: line " . $node->line_number);
-      }
-      
-    }
-    
-    if ($node->word == "while") {
-      // first get a condition
-      // then cases or do blocks  -> case or do
-      $condition = $node->children[0];
-      $do = $node->children[1];
-      assert($do->word == "do");
-      while (static::eval($condition, $env)) {
-        static::eval($do, $env);
-      }
-      return null;
-    }
-    
-    if ($node->word == "type") {
-      #print_r($node);
-      $typename = $node->children[0]->word;
-      $fields = [];
-      foreach ($node->children as $key => $value) {
-        if ($key == 0) continue;
-        $field_name = $value->word;
-        // static eval the type -> should return a string
-        $fields[$field_name] = static::eval($value->children[0], $env);
-      }
-      unset($i);
-      $record = new Record();
-      $record->name = $typename;
-      $record->fields = $fields;
-      // assert that the type name starts with a capital letter
-      assert($typename[0] == strtoupper($typename[0]));
-      // assert that the type name is not already used as a type
-      assert(!isset(static::$records[$typename]));
-      static::$records[$typename] = $record;
-      // now add the type name as function, so we can get the string
-      static::$functions[$typename] = static function () use
-      (
-        $typename
-      ) {
-        return $typename;
-      };
-      return null;
-    }
-    
-    if ($node->word == "for") {
-      /**
-       *  for i 0 10 1 # 4 values
-       */
-      $name = $node->children[0]->word;
-      $start_value = static::eval($node->children[1], $env);
-      assert(is_int($start_value));
-      $end_value = static::eval($node->children[2], $env);
-      assert(is_int($end_value));
-      $step = static::eval($node->children[3], $env);
-      assert(is_int($step));
-      $do = $node->children[4];
-      // add name to env
-      #$env[$name] = $start_value;
-      for ($i = $start_value; $i < $end_value; $i += $step) {
-        $env[$name] = $i;
-        static::eval($do, $env);
-      }
-      // remove name from env
-      unset($env[$name]);
-      return null;
-    }
-    
-    if ($node->word == "set") {
-      $name = $node->children[0]->word;
-      if (str_contains($name, ".")) {
-        $parts = explode(".", $name);
-        $obj = $env[$parts[0]];
-        $last_part = $parts[count($parts) - 1];
-        $other_parts = array_slice($parts, 1, count($parts) - 2);
-        foreach ($other_parts as $key => $value) {
-          if ($key == 0) continue;
-          $obj = $obj->fields[$value];
-        }
-        $instance = $obj;
-        $instance->fields[$last_part] = static::eval($node->children[1], $env);
-      } else {
-        // this measn we are not allowed to change globals, except if the global s a instance
-        $env[$name] = static::eval($node->children[1], $env);
-      }
-      return null;
-    }
-    
-    if ($node->word == "each") {
-      // each k i list/dict do
-      $key_name = $node->children[0]->word;
-      assert(count($node->children[0]->children) == 0);
-      assert($node->children[0]->type == "name");
-      $value_name = $node->children[1]->word;
-      assert(count($node->children[1]->children) == 0);
-      assert($node->children[1]->type == "name");
-      $list_or_dict = static::eval($node->children[2], $env);
-      assert(is_array($list_or_dict), print_r($list_or_dict, true));
-      $do = $node->children[3];
-      assert($do->word == "do");
-      foreach ($list_or_dict as $k => $v) {
-        $env[$key_name] = $k;
-        $env[$value_name] = $v;
-        static::eval($do, $env);
-      }
-      unset($env[$key_name]);
-      unset($env[$value_name]);
-      return null;
-    }
-    
-    // like each, but collects each instance in a list
-    if ($node->word == "map") {
-      // each k i list/dict, @use ContextVar do
-      $key_name = $node->children[0]->word;
-      assert(count($node->children[0]->children) == 0);
-      assert($node->children[0]->type == "name");
-      $value_name = $node->children[1]->word;
-      assert(count($node->children[1]->children) == 0);
-      assert($node->children[1]->type == "name");
-      $list_or_dict = static::eval($node->children[2], $env);
-      assert(is_array($list_or_dict));
-      $do = $node->children[3];
-      assert($do->word == "do");
-      $ret = [];
-      foreach ($list_or_dict as $k => $v) {
-        $env[$key_name] = $k;
-        $env[$value_name] = $v;
-        // do returns the last value
-        $_ret = static::eval($do, $env);
-        $ret[] = $_ret;
-      }
-      unset($env[$key_name]);
-      unset($env[$value_name]);
-      return $ret;
     }
     
     if ($node->word == "do") {
@@ -427,6 +197,7 @@ class Interpreter {
       return $obj;
     }
     
+    print_r($env);
     throw new Exception("Unknown node type: {$node->word} " . $node->type . " " . $node->line_number);
   }
   
@@ -480,7 +251,26 @@ class Interpreter {
    * @return void
    */
   public static function init() {
-    static::$records = [];
+    static::$records = [
+      "TypeInfo" => new Record(
+        name: "TypeInfo",
+        fields: ([
+          "name" => "Str",
+          #"builtin" => "Bool",
+          #"definitionFile" => "Str",
+          #"docComment" => "Str",
+          "fields" => "Dict<Str,Str>"
+        ])
+      ),
+      "KekError" => new Record(
+        name: "KekError",
+        fields: ([
+          "message" => "Str",
+          "codeLine" => "Int",
+          "code" => "Str",
+        ])
+      ),
+    ];
     static::$globals = [];
     static::$non_comptime_nodes = [];
     static::$functions = [];
@@ -488,29 +278,6 @@ class Interpreter {
     // todo: include the builtin functions from other files later on
     
     Interpreter::$functions = [
-      
-      "print" => function (
-        array $args,
-        array $env
-      ): void {
-        foreach ($args as $i => $a) {
-          $args[$i] = Interpreter::eval($a, $env);
-        };
-        assert(is_string($args[0]));
-        assert(count($args) == 1, print_r($args, true));
-        echo str_replace(">n", "\n", $args[0]);
-      },
-      
-      "itos" => function (
-        array $args,
-        array $env
-      ): string {
-        foreach ($args as $i => $a) {
-          $args[$i] = Interpreter::eval($a, $env);
-        };
-        assert(count($args) == 1);
-        return (string)$args[0];
-      },
       
       "dumpTypes" => function (
         array $args,
@@ -534,56 +301,13 @@ class Interpreter {
         var_dump($args[0]);
       },
       
-      "tlog" => function (
-        array $args,
-        array $env
-      ): void {
-        foreach ($args as $i => $a) {
-          $args[$i] = Interpreter::eval($a, $env);
-        };
-        assert(is_string($args[0]), print_r($args[0], true));
-        assert(count($args) == 1);
-        Interpreter::$tlogs[] = $args[0];
-      },
+
       
-      "expect" => function (
-        array $args,
-        array $env
-      ): void {
-        // pops the last tlog and compares it to the expected value
-        foreach ($args as $i => $a) {
-          $args[$i] = Interpreter::eval($a, $env);
-        };
-        assert(is_string($args[0]));
-        assert(count($args) == 1);
-        $expected = $args[0];
-        $actual = array_pop(Interpreter::$tlogs);
-        if ($expected != $actual) {
-          throw new Exception("Expected $expected, got $actual");
-        }
-      },
+
       
-      "lt" => function (
-        array $args,
-        array $env
-      ): bool {
-        foreach ($args as $i => $a) {
-          $args[$i] = Interpreter::eval($a, $env);
-        };
-        assert(count($args) == 2);
-        return $args[0] < $args[1];
-      },
+
       
-      "add" => function (
-        array $args,
-        array $env
-      ): int {
-        foreach ($args as $i => $a) {
-          $args[$i] = Interpreter::eval($a, $env);
-        };
-        assert(count($args) == 2);
-        return $args[0] + $args[1];
-      },
+
       
       "dumpThisNode" => function (
         array $args,
@@ -646,16 +370,7 @@ class Interpreter {
         return $array;
       },
       
-      "dict" => function (
-        array $args,
-        array $env
-      ): array {
-        $array = [];
-        foreach ($args as $arg) {
-          $array[] = Interpreter::eval($arg, $env);
-        }
-        return $array;
-      },
+
       
       "ppAllCollectedNodes" => function (
         array $args,
@@ -679,7 +394,7 @@ class Interpreter {
         return;
       },
       
-      "allNodes" => function (
+      "allNodes"    => function (
         array $args,
         array $env
       ): array {
@@ -693,7 +408,7 @@ class Interpreter {
        * If you invoke a generic function, it is checked if this type exists
        * otherwise it is created as record type.
        */
-      "getTypeName"  => function (
+      "getTypeName" => function (
         array $args,
         array $env
       ) {
@@ -701,22 +416,16 @@ class Interpreter {
       },
       
       // returns the type info based on the given type name
+      // typeinfo -> type of type info-> script type
       "getTypeInfo" => function (
         array $args,
         array $env
-      ){},
+      ) {
+        // return the info struct based on the given value
+        // the type info is created if it is builtin
+      },
+      
 
-      "concat" => function (
-        array $args,
-        array $env
-      ): string {
-        assert(count($args) == 2);
-        $one = Interpreter::eval($args[0], $env);
-        $two = Interpreter::eval($args[1], $env);
-        assert(is_string($one));
-        assert(is_string($two));
-        return $one . $two;
-      }
       
       # todo: create generic type -> own generics type for
       # gtype function, where firts eklemnt is list of placeholders
@@ -728,10 +437,18 @@ class Interpreter {
       // todo: dict literal
       // todo: typeof
       // todo: include file
-    
+      // todo: all_functions
+      
     ];
     include "types.php";  // the type definitions and constructors
+    foreach (scandir("builtins/") as $file)
+      if (str_ends_with($file, ".php"))
+        include "builtins/$file";
+      
+    
   }
+  
+  
 }
 
 
@@ -756,6 +473,7 @@ comptime
 #if false
 #  do > print version
 #  do > print "else block ... >n "
+
 comptime
   var myvar 10
   
@@ -957,22 +675,35 @@ comptime
       #dumpNode _node
 
 CODE;
-
-if(debug_backtrace() == 0) {
-  Interpreter::init();
-  assert(isset($KEYWORDS));
-  $pplines = preProcessLines($code);
-  $nodes = makeAstNodes($pplines, $KEYWORDS);
-  foreach ($nodes as $node) {
-    Interpreter::parse($node);
+Interpreter::init();
+// read all test files and interpret them
+foreach (scandir("./tests/") as $file){
+  if(str_ends_with($file, ".kek")){
+    $code = file_get_contents("./tests/$file");
+    $pplines = preProcessLines($code);
+    $nodes = makeAstNodes($pplines);
+    foreach ($nodes as $node) {
+      Interpreter::parse($node);
+    }
   }
 }
 
-if(isset($_POST["code"])) {
+if (debug_backtrace() == 0) {
+  Interpreter::init();
+  assert(isset($KEYWORDS));
+  $pplines = preProcessLines($code);
+  $nodes = makeAstNodes($pplines);
+  foreach ($nodes as $node) {
+    Interpreter::parse($node);
+  }
+  
+}
+
+if (isset($_POST["code"])) {
   Interpreter::init();
   $code = $_POST["code"];
   $pplines = preProcessLines($code);
-  $nodes = makeAstNodes($pplines, $KEYWORDS);
+  $nodes = makeAstNodes($pplines);
   ob_start();
   foreach ($nodes as $node) {
     Interpreter::parse($node);
@@ -980,9 +711,9 @@ if(isset($_POST["code"])) {
   $result = ob_get_clean();
   
   echo json_encode(array(
-    "result" => $result,
-    "non_comptime_nodes" => Interpreter::$non_comptime_nodes,
-    "records" => Interpreter::$records,
-    "functions" => Interpreter::$functions,
-  ));
+                     "result"             => $result,
+                     "non_comptime_nodes" => Interpreter::$non_comptime_nodes,
+                     "records"            => Interpreter::$records,
+                     "functions"          => Interpreter::$functions,
+                   ));
 }

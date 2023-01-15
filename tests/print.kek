@@ -1,0 +1,39 @@
+comptime
+  print "Hello, kek! >n"
+
+  tlog "some value"
+  expect "some value"
+
+  fn lol
+    a Int
+    Null
+    do
+      tlog > itos a
+
+  lol 123
+  expect "123"
+  lol 321
+  expect "321"
+
+  type Vector
+    x Int
+    y Int
+
+  fn Vector::add
+    this Vector
+    other Vector
+    Vector
+    do
+      new Vector
+        x: > add this.x other.x
+        y: > add this.y other.y
+
+  var v1 > new Vector >> x: 1 >> y: 2
+  var v2 > new Vector >> x: 3 >> y: 4
+  #print "flagg"
+  var v3 > Vector::add v1 v2
+
+  tlog > itos v3.x
+  expect "4"
+  tlog > itos v3.y
+  expect "6"

@@ -1,0 +1,35 @@
+###
+  Generics
+
+  All types in Kek are basically a string.
+
+  Names are also just strings.
+
+###
+
+# if
+# not
+# typeExists
+# new
+# Type
+# Str
+comptime
+  fn MyGeneric
+    T Type #  type is a string that needs to exist as Record
+    Type
+    do
+      var typeName > concat "MyGeneric[" T "]"
+      if > not >> typeExists typeName
+        do
+          type > typeName
+            value T
+            otherValue Int
+      typeName
+
+  var someStuff
+    new > MyGeneric Str
+      value "LOL"
+      otherValue 123
+
+  var a typeOf someStuff
+  print a  # MyGeneric[Str]
