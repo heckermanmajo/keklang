@@ -1,0 +1,74 @@
+
+
+
+comptime
+
+  # fn with two values is a function alias
+  #fn debug std:debug
+  #var v std:v # this works simply
+
+  print "print"
+
+  type GameObject
+    x Int
+    y Int
+
+  fn GameObject::print Void
+    do
+      print
+        format "(x:%d, y:%d)" this.x this.y
+
+  fn GameObject::move
+    dx Int
+    dy Int
+    Void
+    do
+      set this.x > add this.x dx
+      set this.y > add this.y dy
+
+  var go > new GameObject >> x: 10 >> y: 20
+  #print "goi.y: "
+  #print > itos go.y
+  #dumpTypes
+  #exit
+  #set go.x 30
+  #print > itos go.x
+  #exit
+  set go.x 10
+
+  ::move go 5 5
+  tlog > itos go.x
+  expect 15
+  tlog > itos go.y
+  expect 25
+
+  # exit
+  type Player
+    go GameObject
+    name Str
+
+  fn Player::print
+    Void
+    do
+      ::print this.go
+
+  fn Player::move
+    dx Int
+    dy Int
+    Void
+    do
+      ::move this.go dx dy
+
+  var p1
+    new Player
+      go: > new GameObject >> x: 10 >> y: 20
+      name: "Player 1"
+
+  ::move p1 123 123
+
+  tlog p1.go.x
+  expect 133
+  tlog p1.go.y
+  expect 143
+
+  print "Polymorphism tests passed"

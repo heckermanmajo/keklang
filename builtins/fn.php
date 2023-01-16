@@ -2,8 +2,19 @@
 
 Interpreter::$functions["fn"] = function (
   array $args,
-  array $env
+  array &$env
 ) {
+  
+  // if fn only has 2 children it is a simple function alias
+  if (count($args) == 2) {
+    # todo: handle strings and code ...
+    # todo: check if the function exists
+    $new_name = $args[0]->word;
+    $old_name = $args[1]->word;
+    Interpreter::$functions[$new_name] = Interpreter::$functions[$old_name];
+    return null;
+  }
+  
   // todo: argument
   // todo: check return type -> at first at runtime
   // assert that the function name is not already used
@@ -35,6 +46,12 @@ Interpreter::$functions["fn"] = function (
   $do_node = null;
   $return_type = null;
   $arguments = array_slice($args, 1); // remove the function name node
+  
+  // add this as first argument
+  if(str_contains($func_name, "::")){
+    $function_args["this"] = explode("::", $func_name);
+  }
+  
   foreach ($arguments as $key => $c) {
     if (count($c->children) == 0) {
       // todo: assert that this is a type
@@ -55,7 +72,7 @@ Interpreter::$functions["fn"] = function (
   
   $function = static function (
     array $args,
-    array $env
+    array &$env
   ) use
   (
     $do_node,
@@ -64,10 +81,18 @@ Interpreter::$functions["fn"] = function (
   ) {
     $local_env = array();
     
+    if(count($args) != count($function_args)) {
+      throw new KekError("wrong number of arguments: " . count($args) . " != " . count($function_args));
+    }
+    
     $i = 0;
     foreach ($function_args as $key => $type_name) {
       $given_argument = $args[$i];
-      if ($type_name != "AstNode") {
+      // we don't want to execute the "this" argument, because we
+      // executed it before we pass it to the function
+      // this happens, so we can determine the function name+
+      // look into the eval function for more details
+      if ($type_name != "AstNode" and $key != "this") {
         $given_argument = Interpreter::eval($given_argument, $env);
         // todo: do type check here
       }
@@ -77,8 +102,8 @@ Interpreter::$functions["fn"] = function (
     
     $ret = null;
     foreach ($do_node->children as $c) {
-      if ($c)
-        $ret = Interpreter::eval($c, $local_env);
+      #if ($c)
+      $ret = Interpreter::eval($c, $local_env);
     }
     // todo: make type checking better ...
     switch (get_class($return_type)) {

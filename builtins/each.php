@@ -3,7 +3,7 @@
 
 Interpreter::$functions["each"] = function (
   array $args,
-  array $env
+  array &$env
 ) {
   // each k i list/dict do
   $key_name = $args[0]->word;  # todo: make it accept a string

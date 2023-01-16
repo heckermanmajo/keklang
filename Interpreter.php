@@ -64,20 +64,21 @@ class Record {
   
   public function __construct(
     string $name = "",
-    array $fields = []
+    array  $fields = []
   ) {
     $this->name = $name;
     $this->fields = $fields;
   }
-
+  
 }
 
 class Instance {
   public Record $type;
   public array $fields;
+  
   public function __construct(
     Record $type,
-    array $fields
+    array  $fields
   ) {
     $this->type = $type;
     $this->fields = $fields;
@@ -87,9 +88,12 @@ class Instance {
 class KekError extends Exception {
   public int $codeLine = 0;
   public string $codeString = "";
+  
+  public $message = "";
+  
   public function __construct(
     string $message = "",
-    int $codeLine = 0,
+    int    $codeLine = 0,
     string $codeString = ""
   ) {
     parent::__construct($message, 0, null);
@@ -101,32 +105,44 @@ class KekError extends Exception {
     return new Instance(
       Interpreter::$records["KekError"],
       [
-        "message" => $this->message,
+        "message"  => $this->message,
         "codeLine" => $this->codeLine,
-        "code" => $this->code
+        "code"     => $this->code
       ]
     );
   }
 }
 
-# todo: make functions just variables and wrap then into a value type
-#       that can also have a doc comment and annotations
-#       So we can call/analyze even the script code and do stuff like this
-#       var a > fn _ Void do >> print "hello"
-# todo: make functions work like this
-
 # todo: make all "names" also accept normal string values so we can do
 #       var > concat "a_" >> itos 123 > "some value"
 #       # like var a_123 "some value"
+#       -> type, fn
 
 # todo: allow varargs -> via dict and list VarList, VarDict "Type"
 
 # todo: Create builtins for file io, so i can create a import function in kek itself,
 #       The more functions i can implement in kek itself, the better
 
-# todo: make the keywords functions
-
 # todo: replace assert with KekError -> can be catched and handled by kek itself
+
+# todo: how to break a loop?
+
+# todo: Separate dict from list by setting dict -1 so we can check if -1 is set
+#       and if not, we know its a list
+
+# todo: make get and push for list methods
+#       make print methods
+
+# todo: btos, ftos, itos -> methods for the type
+
+# todo: create a Type - Type
+# todo: join -> method of list
+# todo: make char list also method
+
+# todo: add the execution stack to the interpreter, for real stack traces
+#       and then each function call can add to the stack trace and substract
+#       when it returns
+
 
 class Interpreter {
   static array $records = [];
@@ -197,6 +213,47 @@ class Interpreter {
       return $obj;
     }
     
+    // handle protocols that start with ::
+    if (str_starts_with($node->word, "::")) {
+      // first children is the protocol target
+      $value = Interpreter::eval($node->children[0], $env);
+      if(is_string($value)){
+        $func_name = "Str" . $node->word;
+      }elseif(is_int($value)){
+        $func_name = "Int" . $node->word;
+      }elseif(is_float($value)){
+        $func_name = "Float" . $node->word;
+      }elseif(is_bool($value)){
+        $func_name = "Bool" . $node->word;
+      }elseif(is_array($value)){
+        $func_name = "List" . $node->word;
+      }else {
+        $type = get_class($value);
+        $func_name = match ($type) {
+          "Instance" => $value->type->name . $node->word,
+          "Record" => "Type" . $node->word,
+          default => throw new Exception("Unknown type: $type")
+        };
+      }
+      // todo: check if the function exists
+      if (!array_key_exists($func_name, static::$functions)) {
+        throw new KekError("Protocol function $func_name does not exist");
+      }
+      $function = static::$functions[$func_name];
+      $args = [$value];
+      foreach ($node->children as $key => $c) {
+        if ($key == 0) continue; // ignore the "this" variable
+        $args[] = $c; // the function decides if it evals the given nodes
+        // except for "this" which is the first child
+      }
+      return $function($args, $env);
+    }
+    
+    // this is a named parameter, if it ends with ":"
+    if (str_ends_with($node->word, ":")) {
+      return static::eval($node->children[0], $env);
+    }
+    
     print_r($env);
     throw new Exception("Unknown node type: {$node->word} " . $node->type . " " . $node->line_number);
   }
@@ -206,12 +263,19 @@ class Interpreter {
   /**
    * @throws Exception
    */
-  static function parse(AstNode $node): ?AstNode {
-    // parse node
+  static function parse(
+    AstNode $node,
+    array   &$env = null
+  ): ?AstNode {
     if ($node->word == "comptime") {
       $ret = null;
-      foreach ($node->children as $c)
-        $ret = static::eval($c, static::$globals);
+      foreach ($node->children as $c) {
+        if ($env === null) {
+          $ret = static::eval($c, static::$globals);
+        } else {
+          $ret = static::eval($c, $env);
+        }
+      }
       if ($ret == null) return null;
       assert($ret instanceof AstNode);
       // if we gor a return node: append it to the root if the
@@ -228,12 +292,12 @@ class Interpreter {
       $node = static::eval($node, static::$globals);
       if ($node == null) return null;
       assert($node instanceof AstNode);
-      return static::parse($node);
+      return static::parse($node, $env);
     }
     
     $new_children = [];
     foreach ($node->children as $c) {
-      $c = static::parse($c);
+      $c = static::parse($c, $env);
       if ($c == null) continue;
       $new_children[] = $c;
     }
@@ -255,7 +319,7 @@ class Interpreter {
       "TypeInfo" => new Record(
         name: "TypeInfo",
         fields: ([
-          "name" => "Str",
+          "name"   => "Str",
           #"builtin" => "Bool",
           #"definitionFile" => "Str",
           #"docComment" => "Str",
@@ -265,9 +329,9 @@ class Interpreter {
       "KekError" => new Record(
         name: "KekError",
         fields: ([
-          "message" => "Str",
+          "message"  => "Str",
           "codeLine" => "Int",
-          "code" => "Str",
+          "code"     => "Str",
         ])
       ),
     ];
@@ -301,13 +365,6 @@ class Interpreter {
         var_dump($args[0]);
       },
       
-
-      
-
-      
-
-      
-
       
       "dumpThisNode" => function (
         array $args,
@@ -370,7 +427,6 @@ class Interpreter {
         return $array;
       },
       
-
       
       "ppAllCollectedNodes" => function (
         array $args,
@@ -425,7 +481,6 @@ class Interpreter {
         // the type info is created if it is builtin
       },
       
-
       
       # todo: create generic type -> own generics type for
       # gtype function, where firts eklemnt is list of placeholders
@@ -438,13 +493,13 @@ class Interpreter {
       // todo: typeof
       // todo: include file
       // todo: all_functions
-      
+    
     ];
     include "types.php";  // the type definitions and constructors
     foreach (scandir("builtins/") as $file)
       if (str_ends_with($file, ".php"))
         include "builtins/$file";
-      
+    
     
   }
   
@@ -677,8 +732,8 @@ comptime
 CODE;
 Interpreter::init();
 // read all test files and interpret them
-foreach (scandir("./tests/") as $file){
-  if(str_ends_with($file, ".kek")){
+foreach (scandir("./tests/") as $file) {
+  if (str_ends_with($file, ".kek")) {
     $code = file_get_contents("./tests/$file");
     $pplines = preProcessLines($code);
     $nodes = makeAstNodes($pplines);

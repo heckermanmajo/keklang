@@ -1,0 +1,20 @@
+
+comptime
+
+  reset
+
+  fn createType
+    name Str
+    Void
+    do
+      type name
+        a Int
+        b Int
+
+  createType "Kek"
+
+  var a > new Kek >> a: 1 >> b: 2
+
+  print > itos a.a
+
+  exit

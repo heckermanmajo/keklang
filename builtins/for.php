@@ -3,7 +3,7 @@
 
 Interpreter::$functions["for"] = function (
   $args,
-  $env
+  &$env
 ) {
   /**
    *  for i 0 10 1 # 4 values
@@ -18,9 +18,16 @@ Interpreter::$functions["for"] = function (
   $do = $args[4];
   // add name to env
   #$env[$name] = $start_value;
-  for ($i = $start_value; $i < $end_value; $i += $step) {
-    $env[$name] = $i;
-    Interpreter::eval($do, $env);
+  if($step > 0){
+    for($i = $start_value; $i < $end_value; $i += $step){
+      $env[$name] = $i;
+      Interpreter::eval($do, $env);
+    }
+  }else{
+    for($i = $start_value; $i > $end_value; $i += $step) {
+      $env[$name] = $i;
+      Interpreter::eval($do, $env);
+    }
   }
   // remove name from env
   unset($env[$name]);

@@ -2,7 +2,7 @@
 
 Interpreter::$functions["lt"] = function (
   array $args,
-  array $env
+  array &$env
 ): bool {
   foreach ($args as $i => $a) {
     $args[$i] = Interpreter::eval($a, $env);

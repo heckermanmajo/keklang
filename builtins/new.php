@@ -3,10 +3,18 @@
 
 Interpreter::$functions["new"] = function (
   array $args,
-  array $env
+  array &$env
 ) {
   // todo: make it accept a string
-  $typename = $args[0]->word;
+  if (count($args[0]->children) != 0){
+    $typename = Interpreter::eval($args[0], $env);
+  }else{
+    if (array_key_exists($args[0]->word, $env)){
+      $typename = $env[$args[0]->word];
+    }else {
+      $typename = $args[0]->word;
+    }
+  }
   $fields = [];
   foreach ($args as $key => $name_arg) {
     if ($key == 0) {

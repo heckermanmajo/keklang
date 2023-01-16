@@ -1,9 +1,9 @@
 <?php
 
 
-Interpreter::$functions["newKekError"] = function (
+Interpreter::$functions["error"] = function (
   array $args,
-  array $env
+  array &$env
 ): KekError {
   assert(count($args) == 1);
   $message = Interpreter::eval($args[0], $env);

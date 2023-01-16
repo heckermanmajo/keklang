@@ -1,6 +1,6 @@
 <?php
 
-Interpreter::$functions["if"] = function (array $args, array $env){
+Interpreter::$functions["if"] = function (array $args, array &$env){
   // first get a condition
   // then cases or do blocks  -> case or do
   $condition = $args[0];

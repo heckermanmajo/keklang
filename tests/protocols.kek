@@ -1,0 +1,25 @@
+
+
+
+comptime
+  reset
+
+  type MyKek
+    a Int
+    b Int
+
+  #print "MyKek"
+
+  fn MyKek::print > this MyKek > Void
+    do
+      print "MyKek: "
+      print > concat "  " this.a
+      print > concat "  " this.b
+
+  #print "MyKek2"
+
+  var foo > new MyKek >> a: 1 >> b: 2
+
+  #print "MyKek3"
+
+  ::print foo

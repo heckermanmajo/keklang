@@ -2,7 +2,7 @@
 
 Interpreter::$functions["try"] = function (
   array $args,
-  array $env
+  array &$env
 ) {
 
   $code = $args[0];
@@ -11,8 +11,12 @@ Interpreter::$functions["try"] = function (
   try {
     return Interpreter::eval($code, $env);
   }catch (KekError $kekError) {
-    $closure = Interpreter::eval($catch, $env);
-    return $closure($kekError);
+    $name_of_error = $catch->children[0]->word;
+    $env[$name_of_error] = new Instance(
+      Interpreter::$records["KekError"],
+      ["message" => $kekError->message]
+    );
+    return Interpreter::eval($catch->children[1], $env);
   }
   
 };

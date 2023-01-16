@@ -2,10 +2,10 @@
 
 Interpreter::$functions["call"] = function (
   array $args,
-  array $env
+  array &$env
 ): mixed { // type any, needs if case to determine what to di with it
   assert(count($args) == 1);
-  $func_or_func_name = Interpreter::eval($args[0]);
+  $func_or_func_name = Interpreter::eval($args[0], $env);
   assert(
     is_string($func_or_func_name)
     or is_callable($func_or_func_name)
@@ -21,6 +21,15 @@ Interpreter::$functions["call"] = function (
   } else {
     $func = $func_or_func_name;
   }
-  assert($args[1]->word == "list");
-  return $func($args[1]->children, $env);
+  if (is_callable($func)) {
+    if(isset($args[1] )) {
+      if (count($args[1]->children) != 0) {
+        return $func($args[1]->children, $env);
+      }
+      # expect an list node
+    }
+    return $func([], $env);
+  } else {
+    throw new Exception("not callable");
+  }
 };

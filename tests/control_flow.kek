@@ -1,0 +1,26 @@
+###
+
+  Test if statements
+  Test if case
+  Test for
+  Test while
+
+###
+
+comptime
+  print "test if"
+  var a 123
+
+  if > is a 123
+    do
+      tlog "a is 123"
+
+  expect "a is 123"
+
+  if > is a 124
+    do
+      tlog "a is 124"
+    do
+      tlog "a is not 124"
+
+  expect "a is not 124"

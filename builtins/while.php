@@ -2,7 +2,7 @@
 
 Interpreter::$functions["while"] = function (
   array $args,
-  array $env
+  array &$env
 ) {
   // first get a condition
   // then cases or do blocks  -> case or do

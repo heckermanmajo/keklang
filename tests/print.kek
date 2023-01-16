@@ -20,7 +20,6 @@ comptime
     y Int
 
   fn Vector::add
-    this Vector
     other Vector
     Vector
     do
@@ -31,7 +30,7 @@ comptime
   var v1 > new Vector >> x: 1 >> y: 2
   var v2 > new Vector >> x: 3 >> y: 4
   #print "flagg"
-  var v3 > Vector::add v1 v2
+  var v3 > ::add v1 v2
 
   tlog > itos v3.x
   expect "4"

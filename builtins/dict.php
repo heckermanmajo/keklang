@@ -2,7 +2,7 @@
 
 Interpreter::$functions["dict"] = function (
   array $args,
-  array $env
+  array &$env
 ): array {
   $array = [];
   # todo: expect first pair to be the type or "_" to auto-detect

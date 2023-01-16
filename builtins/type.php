@@ -2,10 +2,18 @@
 
 Interpreter::$functions["type"] = function (
   array $args,
-  array $env
+  array &$env
 ) {
   # todo: make typename also work with string and multiple nodes
-  $typename = $args[0]->word;
+  if (count($args[0]->children) != 0){
+    $typename = Interpreter::eval($args[0]->children[0], $env);
+  }else{
+    if (array_key_exists($args[0]->word, $env)){
+      $typename = $env[$args[0]->word];
+    }else {
+      $typename = $args[0]->word;
+    }
+  }
   $fields = [];
   foreach ($args as $key => $value) {
     if ($key == 0) continue;
@@ -24,8 +32,7 @@ Interpreter::$functions["type"] = function (
   Interpreter::$records[$typename] = $record;
   // now add the type name as function, so we can get the string
   // if we want to type hint it or pass it to new
-  Interpreter::$functions[$typename] = static function () use
-  (
+  Interpreter::$functions[$typename] = static function () use (
     $typename
   ) {
     return $typename;

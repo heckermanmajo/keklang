@@ -1,0 +1,40 @@
+
+
+comptime
+  print "Error test >n"
+  try
+    do
+      error "Shit happens >n"
+    catch err
+      do
+        tlog err.message
+        print err.message
+
+  expect "Shit happens >n"
+
+  try
+    do
+      tlog "all fine"
+      tlog "all fine"
+      tlog "all fine"
+      if true
+        do > tlog "all fine"
+    catch err
+      do
+        tlog err.message
+        print err.message
+
+    expect "all fine"
+    expect "all fine"
+    expect "all fine"
+    expect "all fine"
+
+    var a
+      try
+        do
+          error "This does not work for some reason"
+          "LOL"
+        catch err > do >> "fallback"
+
+    tlog a
+    expect "fallback"

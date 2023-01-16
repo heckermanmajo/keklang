@@ -1,0 +1,19 @@
+
+
+comptime
+
+  var l0 > list
+  tlog > itos >> len l0
+  expect "0"
+  var l1 > list 1
+  tlog > itos >> len l1
+  expect "1"
+  var l2 > list 2 2
+  tlog > itos >> len l2
+  expect "2"
+  var l3 > list 3 3 3
+  tlog > itos >> len l3
+  expect "3"
+  var l4 > list 4 4 4 4
+  tlog > itos >> len l4
+  expect "4"

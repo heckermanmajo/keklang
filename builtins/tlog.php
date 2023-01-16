@@ -2,7 +2,7 @@
 
 Interpreter::$functions["tlog"] = function (
   array $args,
-  array $env
+  array &$env
 ): null {
   foreach ($args as $i => $a) {
     $args[$i] = Interpreter::eval($a, $env);

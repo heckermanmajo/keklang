@@ -1,0 +1,15 @@
+
+
+comptime
+  reset
+  print " >n ---------- >n "
+  for i 0 100 1
+    do
+      print i
+
+  print " >n ---------- >n "
+
+  for i 100 0 -1
+    do
+      print " - "
+      print i

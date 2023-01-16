@@ -80,7 +80,8 @@ function preProcessLines(
       $indent = str_repeat(" ", $current_indentation);
       $line = str_replace(" > ", "\n$indent" . "  ", $line);
       $line = str_replace(" >> ", "\n$indent" . "    ", $line);
-      assert(!str_contains($line, " >>> "), "'>>>' and longer is not supported, use linebreaks instead");
+      $line = str_replace(" >>> ", "\n$indent" . "      ", $line);
+      assert(!str_contains($line, " >>>> "), "'>>>' and longer is not supported, use linebreaks instead");
       $_lines = explode("\n", $line);
       foreach ($_lines as $l) {
         $new_indentation = strlen($l) - strlen(ltrim($l));

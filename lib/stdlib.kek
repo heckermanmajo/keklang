@@ -1,0 +1,7 @@
+
+
+comptime
+  var bar 123
+  fn foo Void > do >> print "Hello from the std lib"
+
+  fn std:kek Void > do >> print "Hello from the std lib"

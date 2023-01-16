@@ -1,0 +1,30 @@
+
+
+comptime
+
+  reset
+
+  var f
+    fn _ Void
+      do > print "Hello from an anonymous function"
+
+  call f
+
+  var f2
+    fn _ > a Int > Void
+      do
+        print > itos a
+        print "  Hello from another anonymous function  >n "
+
+  call f2 > list 42
+
+  call
+    fn _ > a Int > b Int > Void
+      do
+        print > itos a
+        print "  Hello from another anonymous function  >n "
+        print > itos b
+        print "  Hello from another anonymous function  >n "
+    list 42 43
+
+  reset

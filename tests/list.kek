@@ -1,0 +1,12 @@
+
+
+comptime
+  reset
+
+  var l > list "Hello" "World" "!"
+
+  each k v l
+    do
+      print > format " %d: %s " k v
+      print  ">n"
+

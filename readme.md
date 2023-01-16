@@ -1,9 +1,7 @@
 # Keklang
 
-Static analysis is sth. you should do from the 
-start of your project.
-
-Code should be simple.
+A static analysis language to create C or 
+possibly any other code.
 
 
 

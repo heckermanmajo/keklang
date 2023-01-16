@@ -1,0 +1,63 @@
+
+
+comptime
+
+  var myString "KEK LOL"
+
+  fn Str::endsWith
+    this Str
+    end Str
+    Bool
+    do
+      error "not implemented"
+
+  # If a name starts with :: it looks up if TYPENAME::NAME exists
+  # as function and then passes in the values
+  # This way we can have protocols
+  ::endsWith myString "LOL"
+
+  # If we want a protocol like toString
+  type MyType
+    a Int
+
+  fn MyType::print
+    this MyType
+    Str
+    do
+      format "MyType %s" this.a
+
+  ###
+    A constructor protocol
+  ###
+  fn MyType::new
+    this MyType
+    Void
+    do
+      assert > is >> gt this.a 0 > "a must be > 0"
+
+  ::print > new MyType 1  #  then uses the toString method and the new protocol
+
+  # the suer can use this also on his own
+
+comptime
+  ###
+    This defines a Generic type with the given protocols.
+  ###
+  fn MyGeneric
+    T Type #  type is a string that needs to exist as Record
+    Type
+    do
+      var typeName > concat "MyGeneric[" T "]"
+      if > not >> typeExists typeName
+        do
+          type > typeName
+            value T
+            otherValue Int
+
+          fn > concat typeName "::print"
+            this typeName
+            Void
+            do
+              format "MyGeneric %s %s" this.value this.otherValue
+
+      typeName
