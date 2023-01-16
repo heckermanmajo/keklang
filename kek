@@ -1,0 +1,46 @@
+#!/bin/php8.2
+<?php
+
+include_once "AstNode.php";
+include_once "preProcessLines.php";
+include_once "Interpreter.php";
+
+// get the first argument
+$arg = $argv[1];
+
+if($arg == "runtests") {
+  // run all the tests
+  Interpreter::init();
+  // read all test files and interpret them
+  foreach (scandir("./tests/") as $file) {
+    if (str_ends_with($file, ".kek")) {
+      $code = file_get_contents("./tests/$file");
+      $pplines = preProcessLines($code);
+      $nodes = makeAstNodes($pplines);
+      print "Interpreting $file \n";
+      foreach ($nodes as $node) {
+        Interpreter::parse($node);
+      }
+    }
+  }
+  
+}else {
+  // get the code
+  $code = file_get_contents($arg);
+  
+  // pre process the code
+  $pplines = preProcessLines($code);
+  
+  // make ast nodes
+  $nodes = makeAstNodes($pplines);
+  
+  
+  Interpreter::init();
+  // parse the nodes
+  foreach ($nodes as $node) {
+    Interpreter::parse($node, Interpreter::$globals);
+  }
+  
+}
+
+

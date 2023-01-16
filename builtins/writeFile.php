@@ -4,7 +4,7 @@
 Interpreter::$functions["writeFile"] = function (
   array $args,
   array &$env
-): null {
+) {
   assert(count($args) == 2);
   $path = Interpreter::eval($args[0], $env);
   $contents = Interpreter::eval($args[1], $env);

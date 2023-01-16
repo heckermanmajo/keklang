@@ -34,7 +34,7 @@ function makeAstNodes(
   $lines = $preProcessedLines;
   $doc_comment_the_line_before = '';
   $nodes_before = [];
-  print "\n";
+  #print "\n";
   foreach ($lines as $line) {
     
     #print $line . "\n";
@@ -117,42 +117,3 @@ function makeAstNodes(
   return $nodes;
   
 }
-
-#$ppl = preProcessLines(file_get_contents("parser.kek"));
-if (!debug_backtrace()):
-  $ppl = preProcessLines(
-    "
-###
-  This is a beautiful print
-  KEKEKEKEKEKEKE
-###
-print > add 1 2
-
-###
-  Class of A
-  @see B
-  Doc comments are used to generate documentation.
-  We can also append to the doc comments via makros.
-###
-type A
-  
-  @log_each_access
-  
-  a int     @readonly
-  b File    @weak
-  
-print \"lol\"
-"
-  );
-  
-  $astNodes = makeAstNodes(
-    $ppl,
-    $KEYWORDS
-  );
-  
-  foreach ($astNodes as $item) {
-    echo $item . "\n";
-  }
-  #print_r($astNodes);
-
-endif;

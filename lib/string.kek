@@ -1,0 +1,29 @@
+
+
+comptime
+
+  ###
+    Checks if the string ends with the specified suffix.
+    @param this Str
+    @param end Str
+    @return Bool
+  ###
+  fn Str::endsWidth
+    end Str
+    Bool
+    do
+      # todo: make simpler with one for loop and no reverse
+      var contains > true
+      var tl > charList this
+      var cl > charList end
+      if > lt >> len tl >> len cl
+        do > set contains false
+        do
+          var o > ::reverse this
+          var lt_re > charList >> ::reverse this
+          var lc_re > charList >> ::reverse end
+          each key val lc_re
+            do
+              if > not >> is val >>> get lt_re key
+                do > set contains false
+      contains

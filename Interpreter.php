@@ -5,92 +5,48 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
-# todo: finish the interpreter
-# todo: create benchmarks -> jit
-
-/**
- * The Kek Programming Language
- *
- * The kek programming language is a statically typed
- * transpiler-preprocessor.
- *
- * Its primary goal is to generate code in for example C
- * and allow a crazy level of flexibility and static analysis.
- *
- * So there is the interpretation of the comptime kek code
- * and then the in kek implemented transpilation of the
- * noncomp kek code to C, Js, Lua, etc. ...
- *
- * List [Type]
- * Dict [Type, Type]
- * Bool
- * Str
- * Int
- * Float
- * Char
- * Void
- * Null
- * Union [Array [Type]]
- * Option [Type]
- * Error
- * Result [Type]  ->The instance or an error
- * Name -> A name or code that evaluates to a string that matches a name
- * # Name is not allowed to contain spaces or special characters
- * AstNode -> The nodes of the kek AST from the non comptime nodes
- * Function[Dict[Str, Type], Type]
- *
- * Types are just strings that are used to identify types.
- *
- * Comptime-specials:
- * comptime
- * !  -> prefix for comptime calls, that are not in the comptime context
- * # you could say macros *
- *
- * Comptime builtins:
- * ...
- */
-
-include_once "keywords.php";
-include "AstNode.php";
-include "preProcessLines.php";
-include "makeAstNodes.php";
-
+include_once "AstNode.php";
+include_once "preProcessLines.php";
+include_once "makeAstNodes.php";
 
 // this is the script record type
 class Record {
-  public string $name;
-  /** @var array<string, string> */
-  public array $fields;
-  
   public function __construct(
-    string $name = "",
-    array  $fields = []
+    public string $name = "",
+    /** @var array<string, string> */
+    public array  $fields = []
   ) {
-    $this->name = $name;
-    $this->fields = $fields;
   }
-  
 }
 
 class Instance {
-  public Record $type;
-  public array $fields;
-  
   public function __construct(
-    Record $type,
-    array  $fields
+    public Record $type,
+    public array  $fields
   ) {
-    $this->type = $type;
-    $this->fields = $fields;
   }
+}
+
+function kekNodeToAstNode(Instance $kekNode): AstNode {
+  # todo: Check all types and stuff
+  $node = new AstNode();
+  $node->word = $kekNode->fields["word"];
+  $node->type = $kekNode->fields["type"];
+  $node->line_number = $kekNode->fields["line_number"];
+  $node->indentation = $kekNode->fields["indentation"];
+  $node->doc_comment = $kekNode->fields["doc_comment"];
+  $node->creator = $kekNode->fields["creator"];
+  
+  foreach ($kekNode->fields["children"] as $c) {
+    $node->children[] = kekNodeToAstNode($c);
+  }
+  return $node;
 }
 
 class KekError extends Exception {
   public int $codeLine = 0;
   public string $codeString = "";
-  
   public $message = "";
-  
   public function __construct(
     string $message = "",
     int    $codeLine = 0,
@@ -100,7 +56,6 @@ class KekError extends Exception {
     $this->codeLine = $codeLine;
     $this->codeString = $codeLine;
   }
-  
   public function getRecordInstance(): Instance {
     return new Instance(
       Interpreter::$records["KekError"],
@@ -112,6 +67,14 @@ class KekError extends Exception {
     );
   }
 }
+
+# todo: rename parse to eval
+# todo: rename eval to evalScriptNode
+
+# todo: all functions of the interpreter should be accessible from the kek code
+
+# todo: create a ASTNODE-record and use this for the manipulation: Translate all read nodes
+#       to this record and then we can translate it from kek to c for example
 
 # todo: make all "names" also accept normal string values so we can do
 #       var > concat "a_" >> itos 123 > "some value"
@@ -143,14 +106,12 @@ class KekError extends Exception {
 #       and then each function call can add to the stack trace and substract
 #       when it returns
 
-
 class Interpreter {
   static array $records = [];
   static array $globals = [];
   static array $functions = [];
   static array $non_comptime_nodes = [];
   static array $tlogs = []; // used for testing
-  
   /**
    * Function used to evaluate script nodes.
    * @param AstNode $node
@@ -310,6 +271,9 @@ class Interpreter {
     return $node;
   }
   
+  
+
+  
   /**
    * Inits and resets the interpreter.
    * @return void
@@ -320,7 +284,7 @@ class Interpreter {
         name: "TypeInfo",
         fields: ([
           "name"   => "Str",
-          #"builtin" => "Bool",
+          "builtin" => "Bool",
           #"definitionFile" => "Str",
           #"docComment" => "Str",
           "fields" => "Dict<Str,Str>"
@@ -334,6 +298,18 @@ class Interpreter {
           "code"     => "Str",
         ])
       ),
+      "Node" => new Record(
+        name: "Node",
+        fields: ([
+          "word"     => "Str",
+          "type"     => "Str",
+          "children" => "List<Node>",
+          "line_number" => "Int",
+          "indentation" => "Int",
+          "doc_comment" => "Str",
+          "creator" => "Str",
+        ])
+      ),
     ];
     static::$globals = [];
     static::$non_comptime_nodes = [];
@@ -341,7 +317,18 @@ class Interpreter {
     static::$tlogs = [];
     // todo: include the builtin functions from other files later on
     
+
+    
     Interpreter::$functions = [
+      
+      "Node::ast" => function(
+        array $args,
+        array &$env
+      ) {
+        $node = Interpreter::eval($args[0], $env);
+        # todo: CHeck all types and stuff
+        return kekNodeToAstNode($node);
+      },
       
       "dumpTypes" => function (
         array $args,
@@ -496,279 +483,12 @@ class Interpreter {
     
     ];
     include "types.php";  // the type definitions and constructors
-    foreach (scandir("builtins/") as $file)
-      if (str_ends_with($file, ".php"))
+    foreach (scandir("builtins/") as $file) {
+      if (str_ends_with($file, ".php")) {
         include "builtins/$file";
-    
-    
-  }
-  
-  
-}
-
-
-/** @language=*.kek */
-$code = <<<CODE
-
-comptime
-  ###
-    In Kek we handle types as interfaces.
-    Types are just descriptions of data.
-  ###
-  type Node
-    word Str
-    type Str
-    line_number Int
-    indentation Int
-    children > Array "Node"
-    doc_comment Str
-    creator Str
-      
-#print "hello world >n "
-#if false
-#  do > print version
-#  do > print "else block ... >n "
-
-comptime
-  var myvar 10
-  
-  #print > itos myvar
-  
-  type Person
-    name Str
-    age Int
-    
-  #dumpTypes
-  
-  var p
-    new Person
-      name: "John"
-      age: 20
-  
-  #dump p
-  
-  tlog p.name
-  expect "John"
-  tlog > itos p.age
-  expect "20"
-  
-  set p.name "Jane"
-  tlog p.name
-  expect "Jane"
-  
-  #dump p
-  
-  set p 123 # currently no type checks ...
-  
-  #dump p
-  
-  fn foo > a Str > b Str > Null
-    do
-      tlog a
-      tlog b
-  
-  foo "kek" "lol"
-  expect "lol"
-  expect "kek"
-  
-  tlog "hello"
-  expect "hello"
-  
-  if 12
-    case 33 > do >> tlog "33"
-    case 12 > do >> tlog "12"
-    else > do >> tlog "else"
-  expect "12"
-  var lol 12
-  if lol
-    case 33 > do >> tlog "33"
-    case 12 > do >> tlog "12"
-    else > do >> tlog "else"
-  expect "12"
-  
-  if 0
-    case 33 > do >> tlog "33"
-    case 2212 > do >> tlog "12"
-    else > do >> tlog "else"
-  expect "else"
-  
-  for i 0 5 1
-    do
-      #print > itos i
-      tlog > itos i
-      
-  expect "4"
-  expect "3"
-  expect "2"
-  expect "1"
-  expect "0"
-  
-  var i 0
-  while > lt i 5
-    do
-      tlog "while"
-      set i > add i 1
-      
-  expect "while"
-  expect "while"
-  expect "while"
-  expect "while"
-  expect "while"
-  
-  type Car
-    name Str
-    owner Person
-  
-  fn bar > age Int > name Str > Person
-    do
-      new Person
-        name: name
-        age: age
-  
-  var p2 > bar 20 "Lol"
-  #dump p2
-  
-  tlog p2.name
-  expect "Lol"
-  tlog > itos p2.age
-  expect "20"
-  
-  var c
-    new Car
-      name: "BMW"
-      owner: p2
-      
-  tlog c.name
-  expect "BMW"
-  tlog c.owner.name
-  expect "Lol"
-  
-  fn baz > a Int > b Int > Int
-    do
-      add a b
-      
-  tlog > itos >> baz 1 2
-  expect "3"
-  
-  fn wow > a Int > b Int > Int
-    do
-      var asd > add a b
-      var xxx > add a b
-      add asd xxx
-  
-  tlog > itos >> wow 1 2
-  expect "6"
-  
-  print "All tests passed"
-  
-  fn !macro > a AstNode > AstNode
-    do
-      #dumpNode a
-      a
-
-!macro > print >> itos 1 >> itos 2
-
-comptime
-  var word > "1"
-  var nodeType > "Int"
-  var line_number > 0
-  var indentation > 0
-  var children > array
-  var doc_comment > ""
-  var node > newNode word nodeType line_number indentation children doc_comment
-  #dumpNode node
-
-comptime
-  fn intNode value Int > AstNode
-    do
-      var word > "1"
-      var nodeType > "Int"
-      var line_number > 0
-      var indentation > 1000
-      var children > array
-      var doc_comment > ""
-      var node > newNode word nodeType line_number indentation children doc_comment
-      node
-      
-  fn !intNode value Int > AstNode > do >> intNode value
-
-type SomeStruct
-  a Int
-  
-type SomeStruct2
-  a Int
-  b weak SomeStruct   # weak means the type is not managed
-  # if we delete SomeStruct2 the SomeStruct will not be deleted
-  # This allows also to save this pointer into other weak pointers
-
-  # Each access to a weak pointer needs to be checked if it is still valid
-
-# this should set SomeStruct.a to readonly
-# !readonly SomeStruct "a"
-
-fn someFunc
-  a Int
-  b Int
-  Int
-  do
-    add a b
-    
-print > itos >> !intNode 1
-
-comptime
-  print "hello world >n "
-  #dumpNode > !intNode 1
-
-comptime
-  ppAllCollectedNodes
-
-comptime
-  var _allNodes > allNodes
-  each key _node _allNodes
-    do
-      print "node: >n "
-      #dumpNode _node
-
-CODE;
-Interpreter::init();
-// read all test files and interpret them
-foreach (scandir("./tests/") as $file) {
-  if (str_ends_with($file, ".kek")) {
-    $code = file_get_contents("./tests/$file");
-    $pplines = preProcessLines($code);
-    $nodes = makeAstNodes($pplines);
-    foreach ($nodes as $node) {
-      Interpreter::parse($node);
+      }
     }
   }
 }
 
-if (debug_backtrace() == 0) {
-  Interpreter::init();
-  assert(isset($KEYWORDS));
-  $pplines = preProcessLines($code);
-  $nodes = makeAstNodes($pplines);
-  foreach ($nodes as $node) {
-    Interpreter::parse($node);
-  }
-  
-}
 
-if (isset($_POST["code"])) {
-  Interpreter::init();
-  $code = $_POST["code"];
-  $pplines = preProcessLines($code);
-  $nodes = makeAstNodes($pplines);
-  ob_start();
-  foreach ($nodes as $node) {
-    Interpreter::parse($node);
-  }
-  $result = ob_get_clean();
-  
-  echo json_encode(array(
-                     "result"             => $result,
-                     "non_comptime_nodes" => Interpreter::$non_comptime_nodes,
-                     "records"            => Interpreter::$records,
-                     "functions"          => Interpreter::$functions,
-                   ));
-}

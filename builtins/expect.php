@@ -3,7 +3,7 @@
 Interpreter::$functions["expect"] = function (
   array $args,
   array &$env
-): null {
+){
   // pops the last tlog and compares it to the expected value
   foreach ($args as $i => $a) {
     $args[$i] = Interpreter::eval($a, $env);

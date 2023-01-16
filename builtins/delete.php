@@ -1,7 +1,7 @@
 <?php
 
 
-Interpreter::$functions["delete"] = function (array $args, array &$env): null {
+Interpreter::$functions["delete"] = function (array $args, array &$env){
   assert(count($args) == 1);
   # todo: make it accept code as well
   $name = Interpreter::eval($args[0], $env);

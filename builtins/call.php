@@ -4,7 +4,7 @@ Interpreter::$functions["call"] = function (
   array $args,
   array &$env
 ): mixed { // type any, needs if case to determine what to di with it
-  assert(count($args) == 1);
+  #assert(count($args) == 2);
   $func_or_func_name = Interpreter::eval($args[0], $env);
   assert(
     is_string($func_or_func_name)

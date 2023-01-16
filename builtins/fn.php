@@ -122,10 +122,10 @@ Interpreter::$functions["fn"] = function (
       case "null":
         assert(is_null($ret));
         break;
-      default:
-        assert($ret instanceof $return_type);
+      #default:
+        #assert($ret instanceof $return_type);
     }
-    assert($ret instanceof $return_type);
+    #assert($ret instanceof $return_type);
     return $ret;
   };
   // if the name is "_", this is an anonymous function

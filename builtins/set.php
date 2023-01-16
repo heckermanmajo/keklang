@@ -4,7 +4,7 @@
 Interpreter::$functions["set"] = function (
   array $args,
   array &$env
-): null {
+){
   assert(count($args) == 2);
   if (is_string($args[0])) {
     $var_name = $args[0];
@@ -51,9 +51,9 @@ Interpreter::$functions["set"] = function (
     $instance->fields[$last_part] = $new_value;
   } else {
     $new_value = Interpreter::eval($args[1], $env);
-    assert($new_value instanceof $env[$var_name],
-           "new_value: " . json_encode($new_value) . ", env[$var_name]: " . json_encode($env[$var_name])
-    );
+#    assert($new_value instanceof $env[$var_name],#
+       #    "new_value: " . json_encode($new_value) . ", env[$var_name]: " . json_encode($env[$var_name])
+   # );
     
     // todo: check that var exists before setting it
     if($instance_to_set != null){

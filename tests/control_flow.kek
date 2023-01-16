@@ -8,7 +8,7 @@
 ###
 
 comptime
-  print "test if"
+  #print "test if"
   var a 123
 
   if > is a 123
@@ -24,3 +24,33 @@ comptime
       tlog "a is not 124"
 
   expect "a is not 124"
+
+  set a "def"
+
+  if a
+    case "abc"
+      do
+        tlog "a is abc"
+    case "def"
+      do
+        tlog "a is def"
+    else
+      do
+        tlog "a is not abc or def"
+
+  expect "a is def"
+
+  set a "öööö"
+
+  if a
+    case "abc"
+      do
+        tlog "a is abc"
+    case "def"
+      do
+        tlog "a is def"
+    else
+      do
+        tlog "a is not abc or def"
+
+  expect "a is not abc or def"

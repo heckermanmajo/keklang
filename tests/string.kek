@@ -2,6 +2,8 @@ comptime
 
   reset
 
+  include "./lib/string.kek"
+
   print "--------------------- >n "
 
   fn Str::len Int
@@ -28,40 +30,20 @@ comptime
         do
           push reversedString > get $charList i
           #print > get $charList i
-      print > len reversedString
+      #print > len reversedString
       #exit
       join "" reversedString
 
   var s "Hello, world!"
 
-  print > typename s
+  #print > typename s
   #exit
 
-  print > join " , " >> list "Hello" "world" "!"
+  #print > join " , " >> list "Hello" "world" "!"
 
   #print s
   #print > itos >> len >>> charList s
   print > ::reverse s
-
-  fn Str::endsWidth
-    end Str
-    Bool
-    do
-      var contains > true
-      var tl > charList this
-      var cl > charList end
-      if > lt >> len tl >> len cl
-        do > set contains false
-        do
-          var o > ::reverse this
-          var lt_re > charList >> ::reverse this
-          var lc_re > charList >> ::reverse end
-
-          each key val lc_re
-            do
-              if > not >> is val >>> get lt_re key
-                do > set contains false
-      contains
 
   if > ::endsWidth "Hello, world!" "sss!"
     do

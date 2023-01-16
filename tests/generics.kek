@@ -14,7 +14,8 @@ comptime
   createType "Kek"
 
   var a > new Kek >> a: 1 >> b: 2
+  tlog > itos a.a
+  expect "1"
+  #print > itos a.a
 
-  print > itos a.a
-
-  exit
+  # exit
