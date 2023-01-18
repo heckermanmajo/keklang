@@ -14,9 +14,14 @@ Interpreter::$functions["try"] = function (
     $name_of_error = $catch->children[0]->word;
     $env[$name_of_error] = new Instance(
       Interpreter::$records["KekError"],
-      ["message" => $kekError->message]
+      ["message" => $kekError->message,
+       "codeLine" => $kekError->codeLine,
+       "code"     => $kekError->codeString,
+       "trace" => $kekError->trace]
     );
-    return Interpreter::eval($catch->children[1], $env);
+     // this is too fra back ...
+    $val = Interpreter::eval($catch->children[1], $env);
+    Interpreter::$error_trace = [];
   }
   
 };

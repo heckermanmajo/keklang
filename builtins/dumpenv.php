@@ -1,8 +1,5 @@
 <?php
 
-
-
-
 Interpreter::$functions["dumpenv"] = function (
   array $args,
   array &$env

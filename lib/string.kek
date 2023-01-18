@@ -17,13 +17,13 @@ comptime
       var tl > charList this
       var cl > charList end
       if > lt >> len tl >> len cl
-        do > set contains false
-        do
+        then > set contains false
+        else
           var o > ::reverse this
           var lt_re > charList >> ::reverse this
           var lc_re > charList >> ::reverse end
           each key val lc_re
             do
               if > not >> is val >>> get lt_re key
-                do > set contains false
+                then > set contains false
       contains

@@ -8,23 +8,37 @@ Interpreter::$functions["for"] = function (
   /**
    *  for i 0 10 1 # 4 values
    */
-  $name = $args[0]->word; # todo: make it accept a string
+  $name = Interpreter::resolveToAName($args[0], $env);
   $start_value = Interpreter::eval($args[1], $env);
-  assert(is_int($start_value));
+  Interpreter::assert(
+    is_int($start_value),
+    "for: expected Int, got " . gettype($start_value));
+  
   $end_value = Interpreter::eval($args[2], $env);
-  assert(is_int($end_value));
+  Interpreter::assert(is_int($end_value),
+    "for: expected Int, got " . gettype($end_value));
   $step = Interpreter::eval($args[3], $env);
-  assert(is_int($step));
+  Interpreter::assert(
+    is_int($step),
+    "for: expected Int, got " . gettype($step)
+  );
+  
+  // check that the name is not already in the env
+  Interpreter::assert(
+    !array_key_exists($name, $env),
+    "for: counter-name '$name' already exists in the environment"
+  );
+  
   $do = $args[4];
   // add name to env
-  #$env[$name] = $start_value;
-  if($step > 0){
-    for($i = $start_value; $i < $end_value; $i += $step){
+  # $env[$name] = $start_value;
+  if ($step > 0) {
+    for ($i = $start_value; $i < $end_value; $i += $step) {
       $env[$name] = $i;
       Interpreter::eval($do, $env);
     }
-  }else{
-    for($i = $start_value; $i > $end_value; $i += $step) {
+  } else {
+    for ($i = $start_value; $i > $end_value; $i += $step) {
       $env[$name] = $i;
       Interpreter::eval($do, $env);
     }

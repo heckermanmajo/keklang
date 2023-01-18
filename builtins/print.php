@@ -5,7 +5,7 @@ Interpreter::$functions["print"] = function (
 ){
   foreach ($args as $i => $a) {
     $args[$i] = Interpreter::eval($a, $env);
-    echo str_replace(">n", "\n", $args[0]);
+    echo str_replace(">n", "\n", $args[$i]);
   };
   return null;
 };

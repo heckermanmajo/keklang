@@ -25,6 +25,13 @@ Interpreter::$functions["new"] = function (
     $name = str_replace(":", "", $name_arg->word);
     $fields[$name] = $value;
   }
+  
+  // check that the type exists
+  Interpreter::assert(
+    array_key_exists($typename, Interpreter::$records),
+    "new: no such type: " . $typename
+  );
+  
   $type = Interpreter::$records[$typename];
   $instance = new Instance(
     $type,

@@ -1,46 +1,62 @@
 #!/bin/php8.2
 <?php
 
+#-dopcache.enable_cli=1 -dopcache.jit=1255 -dopcache.jit_buffer_size=100M
+#var_dump(opcache_get_status()['jit']);
+
 include_once "AstNode.php";
 include_once "preProcessLines.php";
 include_once "Interpreter.php";
 
 // get the first argument
 $arg = $argv[1];
-
-if($arg == "runtests") {
-  // run all the tests
-  Interpreter::init();
-  // read all test files and interpret them
-  foreach (scandir("./tests/") as $file) {
-    if (str_ends_with($file, ".kek")) {
-      $code = file_get_contents("./tests/$file");
-      $pplines = preProcessLines($code);
-      $nodes = makeAstNodes($pplines);
-      print "Interpreting $file \n";
-      foreach ($nodes as $node) {
-        Interpreter::parse($node);
+try {
+  if ($arg == "rt") {
+    // run all the tests
+    
+    Interpreter::init();
+    // read all test files and interpret them
+    foreach (scandir("./tests/") as $file) {
+      if (str_ends_with($file, ".kek")) {
+        $code = file_get_contents("./tests/$file");
+        $pplines = preProcessLines($code);
+        $nodes = makeAstNodes($pplines);
+        foreach ($nodes as $node) {
+          Interpreter::$error_trace[] = "Executing file '$file' ";
+          Interpreter::parse($node);
+          Interpreter::$error_trace = [];
+          if(count(Interpreter::$error_trace) != 0) {
+            echo "Error trace: ";
+            print_r(Interpreter::$error_trace);
+          }
+        }
       }
     }
+    
+  } else {
+    Interpreter::$error_trace[] = "Executing file '$arg' ";
+    // get the code
+    $code = file_get_contents($arg);
+    
+    // pre process the code
+    $pplines = preProcessLines($code);
+    
+    // make ast nodes
+    $nodes = makeAstNodes($pplines);
+    
+    
+    Interpreter::init();
+    // parse the nodes
+    foreach ($nodes as $node) {
+      Interpreter::parse($node, Interpreter::$globals);
+    }
+    array_pop(Interpreter::$error_trace);
   }
-  
-}else {
-  // get the code
-  $code = file_get_contents($arg);
-  
-  // pre process the code
-  $pplines = preProcessLines($code);
-  
-  // make ast nodes
-  $nodes = makeAstNodes($pplines);
-  
-  
-  Interpreter::init();
-  // parse the nodes
-  foreach ($nodes as $node) {
-    Interpreter::parse($node, Interpreter::$globals);
-  }
-  
+} catch (KekError $e) {
+  print "\n\n ======================\n\nError: " . $e->getMessage() . "\n";
+  print "Trace: \n";
+  print implode("\n", array_reverse(Interpreter::$error_trace));
+  exit(1);
 }
 
 

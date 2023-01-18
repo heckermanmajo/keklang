@@ -7,40 +7,23 @@ Interpreter::$functions["fn"] = function (
   
   // if fn only has 2 children it is a simple function alias
   if (count($args) == 2) {
-    # todo: handle strings and code ...
-    # todo: check if the function exists
-    $new_name = $args[0]->word;
-    $old_name = $args[1]->word;
+    $new_name = Interpreter::resolveToAName($args[0], $env);
+    $old_name = Interpreter::resolveToAName($args[1], $env);
+    Interpreter::assert(
+      isset(Interpreter::$functions[$old_name]),
+      "fn: function '$old_name' does not exist"
+    );
     Interpreter::$functions[$new_name] = Interpreter::$functions[$old_name];
     return null;
   }
   
-  // todo: argument
-  // todo: check return type -> at first at runtime
-  // assert that the function name is not already used
-  if (is_string($args[0])) {
-    $func_name = $args[0];
-  } elseif ($args[0] instanceof AstNode) {
-    if (count($args[0]->children) == 0) {
-      if ($args[0]->type == "name") {
-        if (isset($env[$args[0]->word])) {
-          throw new Exception("varname is taken: " . $args[0]->word);
-        }
-      }
-      $func_name = $args[0]->word;
-    } else {
-      $func_name = Interpreter::eval($args[0], $env);
-      assert(is_string($func_name));
-      if (isset($env[$func_name]) or isset(Interpreter::$functions[$func_name])) {
-        throw new Exception("func name is taken: " . $args[0]->word);
-      }
-    }
-  } else {
-    // error
-    throw new Exception("varname is not a string");
-  }
+  $func_name = Interpreter::resolveToAName($args[0], $env);
+  // check that function is alphanumeric -> bit is allowed to contain ::
   
-  // check that function is alphanumeric -> bit is allowd to contain ::
+  Interpreter::assert(
+    !isset(Interpreter::$functions[$func_name]),
+    "fn: function '$func_name' already exists"
+  );
   
   $function_args = []; // args to check against
   $do_node = null;
@@ -54,7 +37,9 @@ Interpreter::$functions["fn"] = function (
   
   foreach ($arguments as $key => $c) {
     if (count($c->children) == 0) {
-      // todo: assert that this is a type
+      Interpreter::assert(
+        $return_type == null, "fn: return type already defined");
+      
       $return_type = $c;
       continue;
     }

@@ -5,17 +5,29 @@ Interpreter::$functions["if"] = function (array $args, array &$env){
   // then cases or do blocks  -> case or do
   $condition = $args[0];
   $eval_cond = Interpreter::eval($condition, $env);
-  if ($args[1]->word == "do") {
-    // it is a if
+  if ($args[1]->word == "then") {
+    // it is an if
     $then = $args[1];
     $else = $args[2] ?? null;
-    #assert($eval_cond == true);
-    assert($else->word == "do" or $else == null);
+    
+    Interpreter::assert(
+      is_bool($eval_cond),
+      "if: expected true, got " . $eval_cond
+    );
+    
     if ($eval_cond) {
-      return Interpreter::eval($then, $env);
+      $ret = null;
+      foreach ($then->children as $c){
+        $ret = Interpreter::eval($c, $env);
+      }
+      return $ret;
     } else {
       if ($else != null) {
-        return Interpreter::eval($else, $env);
+        $ret = null;
+        foreach ($else->children as $c){
+          $ret = Interpreter::eval($c, $env);
+        }
+        return $ret;
       }
       return null;
     }
@@ -35,8 +47,9 @@ Interpreter::$functions["if"] = function (array $args, array &$env){
       }
     }
     if ($else == null) {
-      throw new Exception("no else in if case");
+      Interpreter::err("if case: expected else");
     }
+    
     foreach ($cases as $c) {
       $cond = Interpreter::eval($c->children[0], $env);
       if ($cond == $value) {
@@ -48,6 +61,6 @@ Interpreter::$functions["if"] = function (array $args, array &$env){
     return Interpreter::eval($else->children[0], $env);
     
   } else {
-    throw new Exception("if or case expected: line ");
+    Interpreter::err("if: expected 'then' or 'case', got " . $args[1]->word);
   }
 };

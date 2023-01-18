@@ -38,9 +38,9 @@ comptime
 
   ::move go 5 5
   tlog > itos go.x
-  expect 15
+  expect "15"
   tlog > itos go.y
-  expect 25
+  expect "25"
 
   # exit
   type Player
@@ -66,9 +66,11 @@ comptime
 
   ::move p1 123 123
 
-  tlog p1.go.x
-  expect 133
-  tlog p1.go.y
-  expect 143
+  tlog > ::tos p1.go.x
+  expect "133"
+  tlog > ::tos p1.go.y
+  expect "143"
 
   print "Polymorphism tests passed"
+
+  reset

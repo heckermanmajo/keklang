@@ -12,15 +12,15 @@ comptime
   var a 123
 
   if > is a 123
-    do
+    then
       tlog "a is 123"
 
   expect "a is 123"
 
   if > is a 124
-    do
+    then
       tlog "a is 124"
-    do
+    else
       tlog "a is not 124"
 
   expect "a is not 124"

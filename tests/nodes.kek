@@ -1,0 +1,77 @@
+
+comptime reset
+
+SOMENODE
+
+comptime
+
+  tlog > ::tos >> len getAllNodes
+  expect "1"
+
+OtherNode
+
+comptime
+  tlog > ::tos >> len getAllNodes
+  expect "2"   # asfaergasdfg
+
+foo
+  poop
+    pooooop
+
+comptime
+  tlog > ::tos >> len getAllNodes # 3
+  expect "3"
+
+  fn lsFolder > Void
+    do
+      print > sys "ls -a"
+      null
+
+#!lsFolder
+
+  var d > dict "key" "lol1" "key2" "lol2"
+  #dump d
+  print > get d "key"
+
+print
+  "hello world"
+
+comptime
+  print ">n>n"
+  var lastCreatedNode > getLastNode
+  print lastCreatedNode.word ">n"  # print
+
+  print > ::tos >> len lastCreatedNode.children > ">n"
+  #dump lastCreatedNode
+  var c lastCreatedNode.children
+  #dump c
+  each key child c
+    do
+      print key
+      print child.word
+      #dump child  # child.word
+
+  var code "print ('Hello world')" # lua code
+  var luaCode ""
+
+  fn !print > n AstNode > Void
+    do
+      # convert the AstNode to a kek Node
+      var node > getAstNodeAsNode n
+      var content node.word
+      print content
+      print
+        concat
+          luaCode
+          format "print(\"%s\")" content
+      set luaCode
+        concat
+          luaCode
+          format "print(\"%s\")" content
+
+!print "Deine kek"
+
+!print 123
+
+comptime
+  writeFile "test.lua" luaCode

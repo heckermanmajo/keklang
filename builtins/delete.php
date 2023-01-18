@@ -2,17 +2,16 @@
 
 
 Interpreter::$functions["delete"] = function (array $args, array &$env){
-  assert(count($args) == 1);
-  # todo: make it accept code as well
-  $name = Interpreter::eval($args[0], $env);
-  assert(is_string($name));
+  Interpreter::assert(count($args) == 1,
+                      "delete: expected 1 argument, got " . count($args));
+  $name = Interpreter::resolveToAName($args[0], $env);
   if (array_key_exists($name, $env)) {
     unset($env[$name]);
   } else {
     if (array_key_exists($name, Interpreter::$functions)) {
       unset(Interpreter::$functions[$name]);
     } else {
-      throw new KekError("Variable or function '$name' does not exist");
+      Interpreter::err("delete: no such variable or function: " . $name);
     }
   }
   return null;

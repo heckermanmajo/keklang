@@ -1,0 +1,12 @@
+
+
+comptime
+  reset
+  var a
+    do # currently this will not create a new scope ...
+      var lol 134
+      add lol 124 # last value is returned
+  print lol # problem ... this should result in an error
+  tlog > itos a
+  expect "258"
+  reset

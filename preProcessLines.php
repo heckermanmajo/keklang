@@ -13,37 +13,37 @@ function preProcessLines(
   $string_literal_map = array();
   $string_literal_counter = 0;
   
-  $lines = explode("\n", $code);
-  $string_escaped_lines = array();
-  foreach ($lines as $l) {
-    if (str_contains($l, '"')) {
-      // replace the string between the quotes with a placeholder
-      $newline = "";
-      $in_literal = false;
-      foreach (str_split($l) as $c) {
-        if ($c == '"') {
-          $in_literal = !$in_literal;
-          if ($in_literal) {
-            $string_literal_counter++;
-            $string_literal_map[$string_literal_counter] = "";
-            $newline .= "(($string_literal_counter))";
-          } else {
-            if ($c != '"') {
-              $newline .= $c;
-            }
-          }
-        } else if ($in_literal) {
-          $string_literal_map[$string_literal_counter] .= $c;
-        } else {
-          $newline .= $c;
+  // replace the string between the quotes with a placeholder
+  $newcode = "";
+  $in_literal = false;
+  foreach (str_split($code) as $key => $c) {
+    if ($c == '"' and $code[$key - 1] != "\\") {
+      $in_literal = !$in_literal;
+      if ($in_literal) {
+        $string_literal_counter++;
+        $string_literal_map[$string_literal_counter] = "";
+        $newcode .= "(($string_literal_counter))";
+      } else {
+        if ($c != '"') {
+          $newcode .= $c;
         }
       }
-      $string_escaped_lines[] = $newline;
+    } else if ($in_literal) {
+      $string_literal_map[$string_literal_counter] .= $c;
     } else {
-      $string_escaped_lines[] = $l;
+      $newcode .= $c;
     }
   }
-  $lines = $string_escaped_lines;
+  
+  $_lines = explode("\n", $newcode);
+  $lines = array();
+  foreach ($_lines as $line) {
+    if (!str_starts_with(trim($line), "#")) {
+      $line = explode(" # ", $line)[0];
+    }
+    $lines[] = $line;
+  }
+  
   $in_multiline_comment = false;
   $new_lines = array();
   $comment_line = '';

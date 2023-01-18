@@ -9,6 +9,10 @@ Interpreter::$functions["get"] = function (
   if (is_array($instance)) {
     return $instance[$index];
   }else{
+    Interpreter::assert(
+      !($instance instanceof Instance),
+      "get: expected List or Dict, got " . gettype($instance)
+    );
     return $instance->fields[$index];
   }
 };

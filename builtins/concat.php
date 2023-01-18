@@ -6,7 +6,12 @@ Interpreter::$functions["concat"] = function (
 ): string {
   $ret = "";
   foreach ($args as $arg) {
-    $ret .= Interpreter::eval($arg, $env);
+    $val = Interpreter::eval($arg, $env);
+    Interpreter::assert(
+      is_string($val),
+      "concat: expected String, got " . gettype($val)
+    );
+    $ret .= $val;
   }
   return $ret;
 };

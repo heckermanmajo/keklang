@@ -13,7 +13,7 @@ comptime
     do
       var typeName > concat "SomeContainer" "<" T1 "," T2 ">"
       if > not >> typeExists typeName
-        do
+        then
           type typeName
             a T1
             b T2

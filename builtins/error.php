@@ -5,9 +5,12 @@ Interpreter::$functions["error"] = function (
   array $args,
   array &$env
 ): KekError {
-  assert(count($args) == 1);
+  Interpreter::assert(count($args) == 1,
+    "error: expected 1 argument, got " . count($args)
+  );
   $message = Interpreter::eval($args[0], $env);
-  assert(is_string($message));
-  # todo: code line and code string
-  throw new KekError($message, 0,"" );
+  Interpreter::assert(is_string($message),
+    "error: expected String, got " . gettype($message)
+  );
+  Interpreter::err($message);
 };

@@ -4,20 +4,16 @@ Interpreter::$functions["expect"] = function (
   array $args,
   array &$env
 ){
-  // pops the last tlog and compares it to the expected value
-  foreach ($args as $i => $a) {
-    $args[$i] = Interpreter::eval($a, $env);
-  };
-  assert(is_string($args[0]));
-  assert(count($args) == 1);
-  $expected = $args[0];
+  Interpreter::assert(count($args) == 1,
+  "expect: expected 1 argument, got " . count($args)
+  );
+  $value = Interpreter::eval($args[0], $env);
+  Interpreter::assert(is_string($value), "expect: expected String, got " . gettype($value));
+  $expected = $value;
   // get the value from the start of the array
   $actual = array_pop(Interpreter::$tlogs);
   if ($expected != $actual) {
-    print_r(Interpreter::$tlogs);
-    print_r(Interpreter::$globals);
-    print_r($env);
-    throw new Exception("Expected $expected, got $actual");
+    Interpreter::err("expect: expected '$expected', got '$actual'");
   }
   return null;
 };

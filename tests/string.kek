@@ -2,7 +2,7 @@ comptime
 
   reset
 
-  include "./lib/string.kek"
+  include "./lib/string.kek" false
 
   print "--------------------- >n "
 
@@ -46,7 +46,7 @@ comptime
   print > ::reverse s
 
   if > ::endsWidth "Hello, world!" "sss!"
-    do
+    then
       print "Yes"
-    do
+    else
       print "No"

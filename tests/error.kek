@@ -18,7 +18,7 @@ comptime
       tlog "all fine"
       tlog "all fine"
       if true
-        do > tlog "all fine"
+        then > tlog "all fine"
     catch err
       do
         tlog err.message

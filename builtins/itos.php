@@ -5,8 +5,16 @@ Interpreter::$functions["itos"] = function (
   array $args,
   array &$env
 ): string {
-  assert(count($args) == 1);
+  Interpreter::assert(
+    count($args) == 1,
+    "itos: expected 1 argument, got " . count($args)
+  );
   $arg = Interpreter::eval($args[0], $env);
-  assert(is_int($arg));
-  return (string)$arg;
+  
+  Interpreter::assert(
+    is_int($arg),
+    "itos: expected Int, got " . gettype($arg)
+  );
+  
+  return strval($arg);
 };

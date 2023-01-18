@@ -4,15 +4,27 @@
 #       We need a c-kek lang core
 # The goal is to start with a 1:1 mapping and
 # then improve this mapping in syntax
-struct MyStruct
-  a int
 
-var myVal
-  MemAddr MyStruct
-  CastTo
-    MemAddr MyStruct
-    MemAddr > malloc >> sizeof MyStruct
+comptime
 
-myVal.a = 1234
+  type Address
+    _type Type
 
-stdlib.printf "myStruct: %d \n" myVal.a
+  fn * > _type Type > Address
+    do > new Address _type
+
+  type CMemoryArray
+    _type Type
+    _size Size
+    _data [Size]Type
+
+  type CStructField
+    name Str
+    type > Union CStruct CBuiltin
+
+  type CStruct
+    size Int
+    _type  > * CStruct
+    fields > List CStructField
+
+
