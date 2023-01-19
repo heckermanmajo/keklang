@@ -1,0 +1,40 @@
+
+
+
+# Kek needs only
+###
+
+- types
+- functions calls
+- protocol-definitions
+- error/try catch
+- containers
+- types as strings
+###
+
+Human -> static  # static would mean it is a namespace
+
+  age = 20 : Int|String  # each field needs the default value
+  name = "John"   # the type is inferred from the default value
+  gender = "non-binary"
+  weight = 70f
+
+  ###
+    Changes the gender of this human.
+  ###
+  changeGender -> Null
+    newGender: String = "123"  # parameter : then Type then default
+    this.isMale = newGender
+
+  eat -> Null
+    food: String
+    this.weight += food.weight
+
+  new -> Null
+    # currently do nothing at the new function
+
+
+h = Human
+
+h1 = Human.new
+

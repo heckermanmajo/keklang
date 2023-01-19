@@ -1,0 +1,16 @@
+
+
+
+comptime
+  # do we want closures?
+  ###
+    If we want to achieve stuff like closures
+    we can just use a global.
+    We can also just make a global explict--readonly
+    if we want only a specific function to be able to
+    access it.
+  ###
+
+  fn a Void
+    do
+      print

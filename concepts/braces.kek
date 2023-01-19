@@ -1,0 +1,21 @@
+
+comptime
+  type Object
+    x int
+    y int
+    fn myfn |> null
+      do |> set this.x 1 |> set this.y 2
+
+  var o |> new Object 1 2
+
+  o.myfn
+
+  fn myfn |> a int 12 |> b int 2 |> int
+    do |> add a |>> add a b
+
+# this will be compiled to lua
+type Object
+
+type Mage
+
+!addComponent Mage Object

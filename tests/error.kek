@@ -8,7 +8,7 @@ comptime
     catch err
       do
         tlog err.message
-        print err.message
+        ::print err.message
 
   expect "Shit happens >n"
 

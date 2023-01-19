@@ -1,0 +1,150 @@
+###
+
+Was auf jeden fall rein muss:
+
+- comptime nodes
+- compiler callbacks
+- macros
+
+###
+
+
+# Types start with a capital letter
+# all types can be used as a interface or a component
+FooAble
+  foo -> nil
+    b: Number
+
+# all types can be used as a function
+
+
+# global function definition
+
+myFunc -> nil
+  a: Number
+  b: String
+do
+  print a
+  print b
+
+OtherInterface
+  bar -> String
+    a: FooAble  # this is a field of a type
+    b: Number = 0 # this is a field of a type with a default value
+    error("Not implemented")
+
+foo
+  a: Number
+-> nil
+  print a
+
+foo2
+  a: Number,
+  b: String,
+  c: FooAble,
+  d: ?OtherInterface
+-> nil
+  print a
+
+a := 1 # this is a variable
+b : Int|String = 2 # this is a variable with a type
+
+Foo
+  a: Number
+  foo -> nil
+    print
+      a
+
+MyClosure
+  is FooAble
+  a: Number
+  call -> nil
+    b: Number
+    print
+      a + b
+  foo -> nil
+    b: Number
+    print
+      a
+
+mc := MyClosure(1)
+mc.call(2)
+
+fooables := List[FooAble]()
+fooables.add(mc)
+print fooables[0].foo(3)
+print(mc.b)
+f := new Foo()
+
+CollisionObject
+  x: Number
+  y: Number
+
+# create a Player Class
+Player
+  has CollisionObject  # has means that the player has a collision object struct attached to it
+  # if the player.x or player.y is accessed, it will be redirected to the collision object
+  # the collision object is owned by the player, so it will be freed when the player is freed
+  name: String
+  score: Number
+
+  # constructor
+  new -> Player
+    name: String
+    score: Number
+    self.name = name
+    self.score = score
+
+  # method
+  print -> nil
+    print(self.name + " " + self.score)
+
+# create a new Player object
+# named params in function calls are allowed
+p := Player(name:"John",score: 100)
+
+# Create a bullet
+Bullet
+  is CollisionObject  # is means Collision object is the interface
+  x: Number
+  y: Number
+  speed: Number
+
+  # constructor
+  new -> Bullet
+    x: Number
+    y: Number
+    speed: Number
+    self.x = x
+    self.y = y
+    self.speed = speed
+
+  # method
+  move -> nil
+    self.x += self.speed
+
+  # method
+  print -> nil
+    print(self.x + " " + self.y)
+
+listOfBullets := List[Bullet]()
+
+
+listOfObjects := List[CollisionObject]()
+
+listOfObjects.add(p)
+listOfObjects.add(Bullet(1, 2, 3))
+
+# a for each loop
+for obj in listOfObjects
+  obj.print()
+
+# a for loop
+for i in 0..10
+  print(i)
+
+# a while loop
+i := 0
+while i < 10
+  print(i)
+  i += 1

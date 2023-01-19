@@ -1,4 +1,2 @@
-
-
--> Better error messages
--> Code the whole transpilation process in kek itself.
+- Create One Big test file
+- Make the interpreter more orderly

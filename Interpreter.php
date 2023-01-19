@@ -10,7 +10,17 @@ include_once "preProcessLines.php";
 include_once "makeAstNodes.php";
 
 // this is the script record type
+
 class Record {
+  # todo: Builtin types simply have no fields
+  #       so we can only interact with them via functions
+  #       but they can be evaluated to the value they represent
+  #       except if the type is internal
+  #       Evaluation of internal will result in an error
+  #       Atoomic values get the flag atomic
+  public bool $atomic = false;# set true for string, float, int, bool
+  # todo: // add methods to the record type
+  public array $protocols = []; # todo
   public function __construct(
     public string $name = "",
     /** @var array<string, string> */
@@ -19,6 +29,8 @@ class Record {
   }
 }
 
+# todo: use a instance also for dict and lists
+#       since fields is already an array
 class Instance {
   public function __construct(
     public Record $type,
@@ -64,6 +76,7 @@ function AstNodeToKekNode(
   return new Instance($record, $fields);
 }
 
+
 class KekError extends Exception {
   public int $codeLine = 0;
   public string $codeString = "";
@@ -94,6 +107,34 @@ class KekError extends Exception {
     );
   }
 }
+
+# todo: define some switch and replace language macros
+# todo: maybe replace > with :>>> :>
+/**
+
+ a = 1   -> set a 1
+ a <= 1  -> leq a 1
+ a |> 1   -> gt a 1
+ a >= 1  -> geq a 1
+ a == 1  -> eq a 1
+ a != 1  -> neq a 1
+ 
+ *
+ *
+ */
+
+# todo: use this function type to wrapper each fucntion
+#     so we can use automatic type checking and evaluation
+#     of the function arguments based on the types
+#     This makes all builtin functions a lot easier
+#     And increase the ease of use for the reflection of functions
+class KekFunction{
+  public array $arguments = [];
+  public array $defaultArguments = [];
+  public Type $returnType;
+}
+
+# todo: create the type - lists for real type checking
 
 # todo: create helper functions for stuff like
 #      - getTypeName: Functions have a type name like: Function<Str,Str,Str><Str>
@@ -142,11 +183,26 @@ class KekError extends Exception {
 
 # todo: make all return return values solid
 
+class Scope{
+  # todo: add functions -> local functions possible
+  # todo: make it possible to export a scope -> Name space problems solved
+  # todo: -> if exported the scope can get a name
+}
+
 class Interpreter {
+  # todo: make interpreter an instance
+  # todo: make scopes a Class
+  static array $scopes = []; // list of scopes
+  static array $exportedScopes = []; // list of exported scopes, can beaccessed with a scopename:Name
+  # thea are no variables so can not be assigned
+  # but export scope allows the rest of the code to access its members
+  # via prefix
   static array $records = [];
   static array $globals = [];
   static array $functions = [];
   static array $non_comptime_nodes = [];
+  # todo: use these to jump out of loops
+  static array $loop_nodes = [];
   static array $tlogs = []; // used for testing
   static array $error_trace = []; // used for error tracing
   # todo: add all function infos here
@@ -236,7 +292,7 @@ class Interpreter {
       if ($value instanceof Instance) {
         return $value->type->name;
       } elseif ($value instanceof Closure) {
-        # todo: use function info for better function tyoes
+        # todo: use function info for better function types
         return "Function";
       } elseif ($value instanceof Record) {
         return "Record";
@@ -245,6 +301,25 @@ class Interpreter {
       Interpreter::err("Unknown type of value: " . gettype($value));
     }
     Interpreter::err("Unknown type of value: " . gettype($value));
+  }
+  
+  /**
+   * Executes a node that is meant to be a type.
+   * -> Used if the name of the argument is Type
+   * @return string
+   */
+  static function executeTypeSlot(AstNode $node): string {
+  
+  }
+  
+  /**
+   * Executes a node that is meant to be a Name.
+   * -> Only used in builtin declarations.
+   * -> Names can be strings, so we can do easy generics and other stuff
+   * @return void
+   */
+  static function executeNameSlot(AstNode $node): string {
+  
   }
   
   static function checkGivenStringIsType(
@@ -256,12 +331,16 @@ class Interpreter {
       "Float",
       "Bool",
       "Null",
-      "List",
-      "Dict",
-      "Function",
+      #"List",
+      #"Dict",
+      #"Function",
       "Record",
     ];
+    
     if (!in_array($node, $builtin_types) or !isset(self::$records[$node])) {
+      
+      // maybe a container type: List, Dict, Union, Option
+      
       Interpreter::err("Unknown type: " . $node);
     }
   }
@@ -277,6 +356,8 @@ class Interpreter {
     AstNode $node,
     array   &$env = null
   ): mixed {
+    
+    # todo: create distinction between keywords and builtin functions
     
     // eval one node
     if ($node->type == "string") {
@@ -495,7 +576,7 @@ class Interpreter {
           "doc_comment" => "Str",
           "creator"     => "Str",
         ])
-      ),
+      )
     ];
     static::$globals = [];
     static::$non_comptime_nodes = [];

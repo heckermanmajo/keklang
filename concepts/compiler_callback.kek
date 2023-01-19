@@ -1,0 +1,84 @@
+
+
+comptime
+  # maybe we can remove some logic from the compiler in the
+  # first place ...
+  # read is all that messes with the compiler's state
+  fn @onParseNode ... Void
+    do
+      print "This is called if we start parse a node"
+  fn @onParseNodeEnd ... Void
+  fn @onEvalScriptNode ... Void
+  fn @onEvalScriptNodeEnd ... Void
+  fn @onError ... Void
+  fn @onFunctionCall ... Void
+  # ...
+  fn @onFileStart ... Void
+  fn @onFileEnd ... Void
+
+  # todo: make $ the interpreter
+  # todo: make $$ the lua code
+
+  # handle $::$ as a call to a lua function
+
+  # each > variadic nodes, the first 3 keyname value name thing to iterate
+  # all other nodes are just code and the last returns
+  # no new scope
+  each k v someList
+    print "lol"
+
+  # all loops like this ...
+
+  fn $first args List[Any] Void
+    do
+      # todo: do type check since we are in the compiler lua code
+      var _list = get args 0
+      var _first = get _list 0
+      _first
+
+  # could we implement the builtin functions by adding a native call node?
+  # we need only the "keywords"
+  # fn, var, each, if and the basic types
+  # keywords vs functions? -> just implement native call functions.
+  fn print args List[Any] Void
+    do
+      assert # predefined
+        is > len args > 1
+        format "Print needs exactly one argument, but got "
+          ::tos > len args
+      var arg = first args
+
+      ::nCall $ "print" # direct lua call without checks
+      ::nLocal # create a local variable in the scope
+      ::nSet # set a variable from this env
+      ::parseName # get a name
+      ::
+      ::nString
+
+
+
+  do
+    # new scope
+    fn lol Void
+      do # function scope
+        print "lol"
+    lol # call function
+  lol # not defined anymore
+
+
+  # keywords: what we need to implement the stdlib
+  #           CallToNativFunction
+  # List, Union, Option, Dict, Records, Strings, Int, Float, Bool, Null, Any
+  # get type name, etc.
+  # Env - access (functions, names), creation
+  # get, set
+  # if, each, while, for, exit, case, try, catch, error
+  # call native
+  # ton: creates the native type frm the given one
+  # ::ton -> Protocol
+  # the ::tos ::toi ::tof ::tob ::ton
+  #  we can use try catch to handle errors
+
+
+
+

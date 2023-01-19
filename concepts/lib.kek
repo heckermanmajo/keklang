@@ -1,0 +1,201 @@
+###
+
+
+
+###
+
+
+type LoveType
+  @readonly
+  name String
+!doMacroStuff
+
+comptime
+
+  # we ca do type checking in kek itself ...
+
+  # the idea is: For types that are not records, you just dont have any
+  # fields you can access.
+
+  # Protocol -> only memory
+  # you need the interpreter provided functions
+  # to work with this
+
+  # annotations are added to the next not annotation node
+  # this only works in the KekTranspiler code
+  fn @readonly String
+    do > "readonly"
+
+  # interfaces : can be realised by reading the type info and
+  #              then intercepting the type checking and check against
+  #              a given interface.
+
+  type Protocol
+    fn Protocol::getArglist String
+    fn Protocol::getReturnType String
+
+  type List # same as above
+  # each time we create new list type-> these functions are created:
+    fn len # each list type
+    fn get # each list type
+    fn push # each list type
+    fn pop # each list type
+    fn set # this allows a type save set
+
+  type Dict # same as above
+
+  type Type
+    fn getFields Dict[String, String]
+
+  type String
+    fn len # each string type
+    fn chars # list of chars
+    fn add # each string type
+    fn format
+
+  type Int
+    fn add other Int|Float
+    fn sub other Int|Float
+    fn mul other Int|Float
+
+  type Float
+    fn add other Int|Float
+    fn sub other Int|Float
+    fn mul other Int|Float
+
+  type Bool
+
+  type Null
+
+  type File
+    fn read
+    fn write
+    fn close
+
+  # Predefined records
+
+  type Error
+    message String "error message"
+    line Int 25
+    file String "main.kek"
+    errType String "error type"
+    fn getMessage String
+    fn getLine Int
+    fn getCol Int
+
+  # you could for example also co code at error creation
+
+  # polymorphism: simply: if all types got the same function with name and arguments
+  # protocols can be used to assembly for example a type system
+  # we can also add stuff like
+  <instance>::destroy
+  <instance>::clone
+  <instance>::print
+  <instance>::tos
+  <instance>::tof
+  <instance>::toi
+  <instance>::tob
+  <instance>::is
+
+  # The interpreter "inserts" ::call before each function
+  # or behaves like there is a call before each function
+
+  # functions that are predefined in the Kek-Language
+  $.env # Env -> record type
+  $.env.protocols  # Dict[String,Protocol[Any,Any]]
+  $.env.values  # Dict[String,Value]
+  $.env.settings # Dict[String,Value]
+  $.envs # List[Env]
+  $.compiledNodes  # List[Dict[String,String]]
+  $.lastCompiledNode # Dict[String,String]
+  $.currentError  # the current error
+  $.records  # Dict[String,Type]
+
+
+    # callbacks
+    fn $::onGetTypeString
+      typeString String
+      Type
+      do
+        # do your thing ...
+        # here you can use this
+    fn $::onIf # todo: all other statements
+    # todo: a callback for each thing the interpreter does
+
+  # call compiler functions
+  ::reset $
+  ::exit $
+
+  # keywords:
+  fn var type redef alias
+  list dict open new
+  delete  # remove from current scope
+  do  # new scope
+  if else then while for case
+  try catch error
+  include
+  # stuff like interfaces can be done
+  # in kek itself
+  # defer? does this make sense?
+
+  type MyType > a Int
+  null # returns null
+
+  # there are two ways tpo define a protocol:
+  # once in the type definition
+  # and the with the TypeName::ProtocolName syntax
+  # redef allows for better error checking and static analysis
+  alias MyType::oldTos MyType::tos  # checks if it is a function or a name
+  redef fn MyType::tos String
+    do
+      # do your thing ...
+
+  varName.field # resolve the field of the varName
+  # but a ::get is automatically generated
+  # also a ::set is generated
+
+  # one "?" -> can be null : shorthand for Null|Value
+  # two "??" -> can be value or error : shorthand for Error|Value
+
+  # result functions:
+  fn canFail ??String
+    do
+      if
+        ...
+        then
+          "ok"
+        else
+          error "Some stuff went wrong"
+
+  # functions that start with a Capital letter should return a Type
+  fn MyGeneric
+
+  # so
+  List[MyGeneric[String]]
+  # will be valid -> since i dont find the type and use the function
+
+  fn canFail
+    a > funcThatGetsAType "lol" #  Types always start with ? or a capital letter
+    String
+    do
+      ...
+
+  # simple function call
+
+  var myS "LOl"
+
+  # var access start with a .
+  # dots in the middle are a field access
+  # stuff without the . is called
+  print > reverse .myS
+
+  # a local function is declared like so:
+
+  # local functions are for structuring the code
+
+  fn doo
+    do
+      fn localFunc
+        do
+          ...
+      localFunc

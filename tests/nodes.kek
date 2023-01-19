@@ -59,15 +59,35 @@ comptime
       # convert the AstNode to a kek Node
       var node > getAstNodeAsNode n
       var content node.word
-      print content
-      print
-        concat
-          luaCode
-          format "print(\"%s\")" content
+      #print content
+      #print
+      #  concat
+      #    luaCode
+      #    format "print(\"%s\")" content
       set luaCode
         concat
           luaCode
           format "print(\"%s\")" content
+
+  type LuaValue
+    valType Str
+
+  type Compiler
+    currentEnv > Dict Str LuaValue
+
+
+  fn !local > n AstNode > n AstNode > Void >> do pass
+
+  type LuaTable
+    fields dict String String
+
+  type LuaLiteral
+    word Str
+    literalType Str
+
+  type LuaLocal
+    name Str
+    value > Union LuaValue LuaLiteral
 
 !print "Deine kek"
 

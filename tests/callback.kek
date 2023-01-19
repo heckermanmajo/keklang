@@ -2,11 +2,39 @@
 
 comptime
 
-  reset
+  # We dont need functions as a value, since we can use protocol and records
+  # Then we can easily use type hinting
+  # and also the cost of a closure is clear
+  # error messages are better
+  # and we can check how much memory is taken, how many closures exist, etc
+  # and we can apply all attributes etc
+  # and no new coding features are needed
+  type MyClosure
+    a Int
+    # todo: make this work ?
+    fn ::call
+      do > print >> ::tos this.a
 
+  var mc > new MyClosure 1234
+
+  ::call mc
+
+
+
+
+  ###
+  reset
+  var lol 123
   var f
     fn _ Void
+      # capture lol  make capture work
       do > print "Hello from an anonymous function"
+
+  # todo: maybe use cl -> for creating closures
+  # todo: the return type is automatically inferred
+  # todo: or dont use capture env
+  #cl > do >> print "hello" # Closure[][null]
+  #cl > a Str > do >> print format "hello %s" a # Closure[Str][null]
 
   call f
 
@@ -28,3 +56,4 @@ comptime
     list 42 43
 
   reset
+  ###

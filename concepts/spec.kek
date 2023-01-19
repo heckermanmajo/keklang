@@ -1,0 +1,52 @@
+
+
+
+
+comptime
+  var a 123
+  var b Int 456
+
+  var c > list 1244
+  # same as
+  var c
+    list 1244
+  # same as
+  var c List[Int] > list 1244
+
+  var d > dict "key" "value" # Dict[String,String]
+  # same as
+  var d
+    dict "key" "value"
+  # same as
+  var d Dict[String,String] > dict >> "key" "value"
+  var d Dict[String,String|Int] > dict >> "key" "value" >> "otherkey" 124
+
+  var d Dict[String,String|Int] > dict >> format "key%d" 1 >>> "value" >> "otherkey" 124
+
+  var d "lol"
+  # same as
+  var d "lol"
+
+  set d "lol"
+
+  set d "continues at the same line"
+
+  # same as
+  # special rule: -> is expanded into a simple linebreak on the same level
+  var d Dict[String,String|Int]
+    dict
+      format "key%d" 1 -> "value"
+      "otherkey" -> 124
+
+  # forbidden:
+  ###
+  var d Dict[String,String|Int] > dict
+    > format "key%d" 1
+    > "value"
+    > "otherkey"
+    > 124
+  ###
+
+  fn f
+    a Int
+    do > print "hello" > print "world"

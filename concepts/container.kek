@@ -1,0 +1,35 @@
+
+
+comptime
+  # for a properly working type system, we need
+  # a dict of variable-names mapped to types
+  # same with functions mapped to function types
+  # var with 2 -> type inference
+  # var with 3 -> type explicitly defined
+  var myUnion > Str|Int|Float > "myString"
+  var myOption > ?Str > "myString" # can be null -> "?"
+  set myOption null # okay
+  set myOption 1 # error
+  # the list infers its type from the first element
+  var myArray > list "myString"
+  # only typing is needed if no elements are given
+  var myArray2 List[Str] list
+  # the"[""]" allow for putting the type like a string
+  var myDict Dict[Str,Int] dict
+  # this would be possible, but it would be a bad style
+  var myDict2 Dict[Str,Dict[Str,List[Union[Str|Int|?Float]]]] dict
+
+  # problem: now a generic wouldn't work? or
+
+  fn MyGen
+    a Type
+    b Type
+    Type
+    do
+      # if type exists: create the type
+      # at the end return the type string
+      format "MyGen[%s,%s]" a b
+
+  # we can think about the
+
+

@@ -5,3 +5,19 @@ comptime
   fn foo Void > do >> print "Hello from the std lib"
 
   fn std:kek Void > do >> print "Hello from the std lib"
+
+  # Type -> means String that corresponds to a type
+  fn Union > types List[Type] > Type
+    do > format "Union[%s]" >> join "," types
+
+  # if the type node has children it is executed
+  # if it has no functions: it is checked if it is defined
+  # as a type, if not check a function, if no function
+  # check if it is a variable
+  # else error
+  # add the reasoning to the traceback: if we think it is not a type but a name
+  # put the info, where the variable is defined for example
+  var x > Union Int Str > "Hello"
+  # the same as
+  var x Union[Int,Str] "Hello"
+  # but can be used for generics
