@@ -23,6 +23,11 @@ comptime
     readonly Bool
     managed Bool
 
+  # annotations can be just executed like normal code and
+  # add to a annotations dict[String,Any]
+  @ KekCType AnnotationName "AnnotationData"
+  # the first and second arguments are names
+
   type KekCFunctionArgument
     name Str
     argumentType KekCType

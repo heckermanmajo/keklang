@@ -10,8 +10,9 @@ function makeAstNodes(
   array $preProcessedLines
 ): array {
   $nodes = array();
-  
-  $na = function (
+
+  // add node
+  $newNode = function (
     string     $type,
     string     $word,
     int|string $line_number,
@@ -57,30 +58,30 @@ function makeAstNodes(
     if (str_starts_with(trim($raw_string), "((")) {
       $value = str_replace("((", "", $raw_string);
       $value = str_replace("))", "", $value);
-      $node = $na("string", $value, $line_number, $indentation);
+      $node = $newNode("string", $value, $line_number, $indentation);
       goto collect_children;
     }
     
     if (is_numeric($raw_string)) {
       if (str_contains($raw_string, ".")) {
-        $node = $na("float", $raw_string, $line_number, $indentation);
+        $node = $newNode("float", $raw_string, $line_number, $indentation);
       } else {
-        $node = $na("int", $raw_string, $line_number, $indentation);
+        $node = $newNode("int", $raw_string, $line_number, $indentation);
       }
       goto collect_children;
     }
     
     if ($raw_string == "true" or $raw_string == "false") {
-      $node = $na("boolean", $raw_string, $line_number, $indentation);
+      $node = $newNode("boolean", $raw_string, $line_number, $indentation);
       goto collect_children;
     }
     
     if (str_ends_with($raw_string, ":")) {
-      $node = $na("named_param", $raw_string, $line_number, $indentation);
+      $node = $newNode("named_param", $raw_string, $line_number, $indentation);
       goto collect_children;
     }
     
-    $node = $na("name", $raw_string, $line_number, $indentation);
+    $node = $newNode("name", $raw_string, $line_number, $indentation);
     
     collect_children:
     

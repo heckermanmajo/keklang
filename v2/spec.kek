@@ -1,0 +1,117 @@
+
+comptime
+
+  ###
+    A type definition.
+  ###
+  type MyType
+    foo ?String null
+    bar Int 0
+    myInstance MyOtherType undefined weak
+
+  interface Position
+    x Int
+    y Int
+
+  fn Position::add
+    this Position
+    other Position
+    do :> Position
+      return
+        new Position
+          x: | add this.x other.x
+          y: | add this.y other.y
+
+  type CollisionBox
+    use Position
+    friend Human
+    x Int 0
+    y Int 0
+    width Int 0
+    height Int 0
+
+  type Dieable
+    health Int 0
+    maxHealth Int 0
+
+  type Human
+    generic T1
+    myField T1
+    collisionBox CollisionBox undefined
+    health Int 100
+    maxHealth Int 100
+
+  fn MyType::init
+    this MyType
+    foo ?String null
+    bar Int 0
+    myInstance MyOtherType
+    do :> MyType
+      set this.foo foo
+      set this.bar bar
+      set this.myInstance myInstance
+
+  fn myMain
+    foo "hello"
+    bar 42
+    do :> MyType
+      friend Human  # only Human can access this now
+      print | tos bar
+      print bar
+
+  # would be error, since we are only friend to Human
+  myMain
+    foo: "hello"
+    bar: 42
+
+  var myList :> List[MyType]
+    new List[MyType]
+
+  each | key: Int | value: MyType | myList
+    print | tos key
+    print | tos value
+
+  var myMap :> Map[String,MyType] | new Map[String,MyType]
+  @myMap "key" 12
+
+  # all unions are weak container for references
+  var myUnion :> Union[String,Union[String,Int]]
+    new Union[String,Union[Union[String,Int],Int]]
+
+  set myUnion.value "hello"
+
+  if myUnion.type
+    case "String"
+      print "is string"
+    case "Int"
+      print "is int"
+    else
+      print "This is not expected to happen"
+
+  for | i Int 0 | < i 10 | + i 1
+    set
+      myMap
+      tos
+      new MyType
+        foo: | tos i
+        bar: i
+
+  if | eq 1 1
+    print "1 == 1"
+  else
+    print "1 != 1"
+
+  if "lol"
+    case "lol"
+      print "lol"
+    case "lul"
+      print "lul"
+    else
+      print "else"
+
+  # function that is no protocol?
+  # is basically just a do block ...
+  # we dont need functions that are no protocols
+  do :> Int
+    return 1
+
